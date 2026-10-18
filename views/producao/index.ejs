@@ -15,20 +15,34 @@
       </label>
       <label>Data <input type="date" name="data" value="<%= form.data %>" required></label>
     </div>
+    <label>Produto
+      <select name="produto_id" id="produto" required>
+        <option value="">Escolha…</option>
+        <% for (const p of produtos) { %>
+          <option value="<%= p.id %>" data-unidade="<%= u.unidadeProducao(p) %>" <%= p.id === form.produto_id ? 'selected' : '' %>><%= p.nome %> (em <%= u.unidadeProducao(p) %>)</option>
+        <% } %>
+      </select>
+    </label>
     <div class="linha">
-      <label>Produto
-        <select name="produto_id" required>
-          <option value="">Escolha…</option>
-          <% for (const p of produtos) { %>
-            <option value="<%= p.id %>" <%= p.id === form.produto_id ? 'selected' : '' %>><%= p.nome %> (<%= p.unidade %>)</option>
-          <% } %>
-        </select>
+      <label><span>Quantidade <span id="unidade-qtd"></span></span>
+        <input name="quantidade" inputmode="decimal" value="<%= form.quantidade %>" required autofocus>
       </label>
-      <label>Quantidade <input name="quantidade" inputmode="decimal" value="<%= form.quantidade %>" required autofocus></label>
+      <label>Observação <input name="observacao" value="<%= form.observacao || '' %>" placeholder="opcional"></label>
     </div>
-    <label>Observação <input name="observacao" value="<%= form.observacao || '' %>" placeholder="opcional"></label>
     <button class="botao">Registrar</button>
   </form>
+  <script>
+    (function () {
+      const sel = document.getElementById('produto');
+      const rotulo = document.getElementById('unidade-qtd');
+      const atualizar = () => {
+        const un = sel.selectedOptions[0]?.dataset.unidade;
+        rotulo.textContent = un ? '(' + un + ')' : '';
+      };
+      sel.addEventListener('change', atualizar);
+      atualizar();
+    })();
+  </script>
   <% } %>
 </div>
 

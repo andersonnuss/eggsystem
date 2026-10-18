@@ -74,6 +74,27 @@ const migrations = [
   ALTER TABLE clientes ADD COLUMN cpf TEXT;
   CREATE UNIQUE INDEX idx_clientes_cpf ON clientes(cpf) WHERE cpf IS NOT NULL;
   `,
+  `
+  -- Produção pode ser lançada numa unidade menor que a de venda (ex.: ovo x dúzia).
+  -- fator = quantas unidades de produção formam 1 unidade de venda (ex.: 12).
+  -- producao.quantidade fica na unidade de produção; venda_itens.quantidade na de venda.
+  ALTER TABLE produtos ADD COLUMN unidade_producao TEXT;
+  ALTER TABLE produtos ADD COLUMN fator REAL NOT NULL DEFAULT 1;
+
+  -- Log de tudo que foi cadastrado, alterado ou excluído
+  CREATE TABLE historico (
+    id INTEGER PRIMARY KEY,
+    criado_em TEXT NOT NULL DEFAULT (datetime('now')),
+    usuario TEXT,
+    entidade TEXT NOT NULL,
+    entidade_id INTEGER,
+    acao TEXT NOT NULL,
+    resumo TEXT NOT NULL,
+    detalhes TEXT
+  );
+  CREATE INDEX idx_historico_entidade ON historico(entidade, entidade_id);
+  CREATE INDEX idx_historico_data ON historico(criado_em);
+  `,
 ];
 
 function migrate() {

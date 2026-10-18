@@ -47,6 +47,9 @@ h2 { font-size: 1.1rem; margin: 20px 0 8px; }
   padding: 10px 16px; background: var(--superficie); border-bottom: 1px solid var(--borda);
 }
 .marca { font-weight: 700; text-decoration: none; color: var(--texto); font-size: 1.1rem; }
+.topo-acoes { display: flex; align-items: center; gap: 8px; }
+.topo-acoes a { text-decoration: none; padding: 6px; }
+.topo-acoes a.ativo { font-weight: 600; }
 
 /* Menu: barra inferior no celular, faixa superior no computador */
 .menu {
@@ -88,7 +91,7 @@ h2 { font-size: 1.1rem; margin: 20px 0 8px; }
 /* Formulários: campos grandes para toque */
 .formulario { display: grid; gap: 12px; }
 .formulario label { display: grid; gap: 4px; font-size: .9rem; color: var(--sutil); }
-.linha { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.linha { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: end; }
 input, select, textarea {
   font: inherit; color: var(--texto); background: var(--fundo);
   border: 1px solid var(--borda); border-radius: 8px; padding: 10px 12px; min-height: 44px; width: 100%;
@@ -151,5 +154,15 @@ form.inline { display: inline; }
 .parecidos { background: var(--alerta-fundo); border-radius: 8px; padding: 8px 12px; margin-top: -4px; }
 .parecidos ul { margin: 4px 0 0; padding-left: 18px; }
 .parecidos li { margin: 2px 0; }
+
+.historico li { display: block; }
+.historico details { margin-top: 6px; }
+.historico summary { cursor: pointer; }
+.historico dl { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 6px 0 0; font-size: .9rem; }
+.historico dt { color: var(--sutil); }
+.historico dd { margin: 0; overflow-wrap: anywhere; }
+.selo[class*="acao-"] { background: var(--borda); color: var(--texto); }
+.selo.acao-criou, .selo.acao-entrou { background: var(--ok-fundo); color: var(--ok); }
+.selo.acao-excluiu, .selo.acao-falhou { background: var(--alerta-fundo); color: var(--alerta); }
 
 .vazio { text-align: center; color: var(--sutil); padding: 24px 0; }

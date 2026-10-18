@@ -1,11 +1,36 @@
 const express = require('express');
 const { db, transaction } = require('../db');
 const { produtosComEstoque, clientesAtivos } = require('../consultas');
-const { parseDinheiro, parseQuantidade, hoje, dataValida, textoOuNull } = require('../util');
+const { parseDinheiro, parseQuantidade, hoje, dataValida, textoOuNull, numero, dinheiro } = require('../util');
+const historico = require('../historico');
 
 const router = express.Router();
 
 const lista = (v) => (v === undefined ? [] : Array.isArray(v) ? v : [v]);
+
+// Venda completa (com nome do cliente e itens) para telas e histórico
+function carregarVenda(id) {
+  const venda = db.prepare(`
+    SELECT v.*, c.nome AS cliente, c.telefone
+    FROM vendas v JOIN clientes c ON c.id = v.cliente_id
+    WHERE v.id = ?
+  `).get(id);
+  if (!venda) return null;
+  venda.itens = db.prepare(`
+    SELECT i.*, p.nome AS produto, p.unidade
+    FROM venda_itens i JOIN produtos p ON p.id = i.produto_id
+    WHERE i.venda_id = ?
+    ORDER BY i.id
+  `).all(venda.id);
+  return venda;
+}
+
+function retratoVenda(venda) {
+  const itens = venda.itens
+    .map((i) => `${numero(i.quantidade)} ${i.unidade} ${i.produto} × ${dinheiro(i.preco_unit_centavos)}`)
+    .join('; ');
+  return historico.retrato('venda', { ...venda, itens });
+}
 
 router.get('/', (req, res) => {
   const filtro = req.query.filtro === 'pendentes' ? 'pendentes' : 'todas';
@@ -80,7 +105,13 @@ router.post('/', (req, res) => {
       .run(form.cliente_id, form.data, total, form.pago ? 1 : 0, form.pago ? form.data : null, form.observacao);
     const inserirItem = db.prepare('INSERT INTO venda_itens (venda_id, produto_id, quantidade, preco_unit_centavos) VALUES (?, ?, ?, ?)');
     for (const it of itens) inserirItem.run(lastInsertRowid, it.produto_id, it.quantidade, it.preco);
-    return lastInsertRowid;
+    const venda = carregarVenda(lastInsertRowid);
+    historico.registrar(req, {
+      entidade: 'venda', id: venda.id, acao: 'criou',
+      resumo: `Registrou a venda #${venda.id} para ${venda.cliente} (${dinheiro(venda.total_centavos)})`,
+      detalhes: retratoVenda(venda),
+    });
+    return venda.id;
   });
 
   req.session.aviso = 'Venda registrada.';
@@ -88,31 +119,40 @@ router.post('/', (req, res) => {
 });
 
 router.get('/:id', (req, res, next) => {
-  const venda = db.prepare(`
-    SELECT v.*, c.nome AS cliente, c.telefone
-    FROM vendas v JOIN clientes c ON c.id = v.cliente_id
-    WHERE v.id = ?
-  `).get(req.params.id);
+  const venda = carregarVenda(req.params.id);
   if (!venda) return next();
-  const itens = db.prepare(`
-    SELECT i.*, p.nome AS produto, p.unidade
-    FROM venda_itens i JOIN produtos p ON p.id = i.produto_id
-    WHERE i.venda_id = ?
-    ORDER BY i.id
-  `).all(venda.id);
-  res.render('vendas/detalhe', { titulo: `Venda #${venda.id}`, venda, itens });
+  res.render('vendas/detalhe', { titulo: `Venda #${venda.id}`, venda, itens: venda.itens });
 });
 
-router.post('/:id/pagamento', (req, res) => {
+router.post('/:id/pagamento', (req, res, next) => {
+  const venda = carregarVenda(req.params.id);
+  if (!venda) return next();
   const pago = req.body.pago === '1';
-  db.prepare("UPDATE vendas SET pago = ?, data_pagamento = CASE WHEN ? THEN date('now', 'localtime') END WHERE id = ?")
-    .run(pago ? 1 : 0, pago ? 1 : 0, req.params.id);
+  transaction(() => {
+    db.prepare("UPDATE vendas SET pago = ?, data_pagamento = CASE WHEN ? THEN date('now', 'localtime') END WHERE id = ?")
+      .run(pago ? 1 : 0, pago ? 1 : 0, venda.id);
+    historico.registrar(req, {
+      entidade: 'venda', id: venda.id, acao: 'alterou',
+      resumo: `Marcou a venda #${venda.id} de ${venda.cliente} como ${pago ? 'paga' : 'a receber'}`,
+      detalhes: historico.mudancas('venda', venda, { pago: pago ? 1 : 0 }),
+    });
+  });
   req.session.aviso = pago ? 'Venda marcada como paga.' : 'Venda marcada como a receber.';
-  res.redirect(`/vendas/${req.params.id}`);
+  res.redirect(`/vendas/${venda.id}`);
 });
 
 router.post('/:id/excluir', (req, res) => {
-  db.prepare('DELETE FROM vendas WHERE id = ?').run(req.params.id);
+  const venda = carregarVenda(req.params.id);
+  if (venda) {
+    transaction(() => {
+      db.prepare('DELETE FROM vendas WHERE id = ?').run(venda.id);
+      historico.registrar(req, {
+        entidade: 'venda', id: venda.id, acao: 'excluiu',
+        resumo: `Excluiu a venda #${venda.id} de ${venda.cliente} (${dinheiro(venda.total_centavos)})`,
+        detalhes: retratoVenda(venda),
+      });
+    });
+  }
   req.session.aviso = 'Venda excluída.';
   res.redirect('/vendas');
 });

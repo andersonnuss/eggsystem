@@ -1,12 +1,15 @@
 <%- include('../partials/topo') %>
-<h1><%= titulo %></h1>
+<div class="cabecalho">
+  <h1><%= titulo %></h1>
+  <% if (produto.id) { %><a href="/historico?entidade=produto&id=<%= produto.id %>" class="botao secundario pequeno">Histórico</a><% } %>
+</div>
 <div class="cartao">
   <% if (erro) { %><div class="erro"><%= erro %></div><% } %>
   <form method="post" action="/produtos<%= produto.id ? '/' + produto.id : '' %>" class="formulario">
     <label>Nome <input name="nome" value="<%= produto.nome %>" required placeholder="Ex.: Ovos caipira"></label>
     <div class="linha">
-      <label>Unidade
-        <select name="unidade">
+      <label>Unidade de venda
+        <select name="unidade" id="unidade">
           <% const lista = unidades.includes(produto.unidade) ? unidades : [produto.unidade, ...unidades]; %>
           <% for (const un of lista) { %>
             <option <%= un === produto.unidade ? 'selected' : '' %>><%= un %></option>
@@ -15,6 +18,27 @@
       </label>
       <label>Preço (R$) <input name="preco" inputmode="decimal" value="<%= u.dinheiroInput(produto.preco_centavos) %>"></label>
     </div>
+
+    <div class="linha">
+      <label>Unidade de produção
+        <select name="unidade_producao" id="unidade_producao">
+          <option value="">mesma da venda</option>
+          <% const listaProd = !produto.unidade_producao || unidadesProducao.includes(produto.unidade_producao)
+               ? unidadesProducao : [produto.unidade_producao, ...unidadesProducao]; %>
+          <% for (const un of listaProd) { %>
+            <option <%= un === produto.unidade_producao ? 'selected' : '' %>><%= un %></option>
+          <% } %>
+        </select>
+      </label>
+      <label id="campo-fator"><span>Qtd. em 1 <span id="rotulo-unidade"><%= produto.unidade %></span></span>
+        <input name="fator" id="fator" inputmode="decimal" value="<%= produto.unidade_producao ? u.numero(produto.fator) : '' %>" placeholder="ex.: 12">
+      </label>
+    </div>
+    <p class="sutil" style="margin:-4px 0 0">
+      Ex.: ovos são lançados na produção por <strong>ovo</strong> e vendidos por <strong>dúzia</strong> → 12 ovos em 1 dúzia.
+      <% if (produto.id) { %>Se mudar esse número, a produção já lançada é convertida para manter o estoque.<% } %>
+    </p>
+
     <% if (produto.id) { %>
       <label class="check"><input type="checkbox" name="ativo" value="1" <%= produto.ativo ? 'checked' : '' %>> Ativo (aparece em vendas e produção)</label>
     <% } %>
@@ -24,4 +48,22 @@
     </div>
   </form>
 </div>
+<script>
+  (function () {
+    const unidade = document.getElementById('unidade');
+    const prod = document.getElementById('unidade_producao');
+    const fator = document.getElementById('fator');
+    const campo = document.getElementById('campo-fator');
+    function atualizar() {
+      document.getElementById('rotulo-unidade').textContent = unidade.value;
+      const usa = prod.value && prod.value !== unidade.value;
+      campo.style.visibility = usa ? 'visible' : 'hidden';
+      fator.required = usa;
+      if (usa && !fator.value && unidade.value === 'dúzia') fator.value = '12';
+    }
+    unidade.addEventListener('change', atualizar);
+    prod.addEventListener('change', atualizar);
+    atualizar();
+  })();
+</script>
 <%- include('../partials/rodape') %>

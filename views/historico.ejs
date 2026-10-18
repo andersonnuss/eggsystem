@@ -1,0 +1,46 @@
+<%- include('partials/topo') %>
+<h1>Histórico</h1>
+<% const link = (params) => '/historico' + (Object.keys(params).length ? '?' + new URLSearchParams(params) : ''); %>
+<div class="filtros">
+  <a href="/historico" class="<%= !entidade ? 'ativo' : '' %>">Tudo</a>
+  <% for (const [chave, nome] of Object.entries(entidades)) { %>
+    <a href="<%= link({ entidade: chave }) %>" class="<%= entidade === chave && !id ? 'ativo' : '' %>"><%= nome %></a>
+  <% } %>
+</div>
+<% if (id) { %>
+  <p class="sutil">Mostrando apenas o registro #<%= id %>. <a href="<%= link({ entidade }) %>">Ver todos de <%= entidades[entidade].toLowerCase() %></a></p>
+<% } %>
+
+<% if (!registros.length) { %><p class="vazio">Nada registrado ainda.</p><% } %>
+<ul class="lista historico">
+  <% for (const r of registros) { %>
+    <li>
+      <div class="bloco">
+        <div><span class="selo acao-<%= r.acao %>"><%= r.acao %></span> <%= r.resumo %></div>
+        <div class="sutil"><%= u.data(r.quando) %> <%= r.quando.slice(11, 16) %><%= r.usuario ? ' · ' + r.usuario : '' %></div>
+        <% if (r.detalhes) { %>
+          <details>
+            <summary class="sutil">detalhes</summary>
+            <dl>
+              <% for (const [campo, valor] of Object.entries(r.detalhes)) { %>
+                <dt><%= campo %></dt>
+                <% if (valor && typeof valor === 'object') { %>
+                  <dd><del><%= valor.de %></del> → <%= valor.para %></dd>
+                <% } else { %>
+                  <dd><%= valor %></dd>
+                <% } %>
+              <% } %>
+            </dl>
+          </details>
+        <% } %>
+      </div>
+    </li>
+  <% } %>
+</ul>
+
+<div class="acoes">
+  <% const base = entidade ? { entidade, ...(id ? { id } : {}) } : {}; %>
+  <% if (pagina > 1) { %><a class="botao secundario" href="<%= link({ ...base, pagina: pagina - 1 }) %>">← Mais recentes</a><% } %>
+  <% if (temMais) { %><a class="botao secundario" href="<%= link({ ...base, pagina: pagina + 1 }) %>">Mais antigos →</a><% } %>
+</div>
+<%- include('partials/rodape') %>

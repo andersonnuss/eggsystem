@@ -28,6 +28,7 @@
     <input type="hidden" name="pago" value="<%= venda.pago ? '0' : '1' %>">
     <button class="botao <%= venda.pago ? 'secundario' : '' %>"><%= venda.pago ? 'Marcar como a receber' : 'Marcar como pago' %></button>
   </form>
+  <a href="/historico?entidade=venda&id=<%= venda.id %>" class="botao secundario">Histórico</a>
   <form method="post" action="/vendas/<%= venda.id %>/excluir" class="inline" onsubmit="return confirm('Excluir esta venda? O estoque volta a contar esses itens.')">
     <button class="botao perigo">Excluir</button>
   </form>

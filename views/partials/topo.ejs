@@ -5,14 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#7a5c2e">
   <title><%= titulo %> · Eggsystem</title>
-  <link rel="stylesheet" href="/style.css">
-  <link rel="icon" href="/icone.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css?v=<%= versao %>">
+  <link rel="icon" href="/icone.svg?v=<%= versao %>" type="image/svg+xml">
 </head>
 <body>
 <header class="topo">
   <a href="/" class="marca">🥚 Eggsystem</a>
   <% if (usuarioNome) { %>
-    <form method="post" action="/sair"><button class="link">Sair</button></form>
+    <div class="topo-acoes">
+      <a href="/historico" class="<%= caminho.startsWith('/historico') ? 'ativo' : '' %>">🕘 Histórico</a>
+      <form method="post" action="/sair"><button class="link">Sair</button></form>
+    </div>
   <% } %>
 </header>
 <% if (usuarioNome) {

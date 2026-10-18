@@ -11,11 +11,11 @@
     <li class="<%= p.ativo ? '' : 'inativo' %>">
       <a class="bloco" href="/produtos/<%= p.id %>">
         <div class="titulo"><%= p.nome %><%= p.ativo ? '' : ' (inativo)' %></div>
-        <div class="sutil"><%= u.dinheiro(p.preco_centavos) %> / <%= p.unidade %></div>
+        <div class="sutil"><%= u.dinheiro(p.preco_centavos) %> / <%= p.unidade %><%= p.unidade_producao ? ` · produção em ${p.unidade_producao} (${u.numero(p.fator)} = 1 ${p.unidade})` : '' %></div>
       </a>
       <div class="valor">
-        <div><%= u.numero(p.estoque) %></div>
-        <div class="sutil">em estoque</div>
+        <div><%= u.numero(p.estoque) %> <%= p.unidade %></div>
+        <div class="sutil"><%= p.unidade_producao ? `${u.numero(p.estoque_producao)} ${p.unidade_producao}` : 'em estoque' %></div>
       </div>
     </li>
   <% } %>

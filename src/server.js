@@ -19,6 +19,8 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, '..', 'views'));
 app.set('trust proxy', 'loopback');
 app.disable('x-powered-by');
+// Muda a cada reinício: força o navegador a baixar CSS/ícone novos após uma atualização
+app.locals.versao = Date.now().toString(36);
 
 app.use(express.static(path.join(__dirname, '..', 'public'), { maxAge: '1d' }));
 app.use(express.urlencoded({ extended: true }));
@@ -50,6 +52,7 @@ app.use('/produtos', require('./routes/produtos'));
 app.use('/clientes', require('./routes/clientes'));
 app.use('/producao', require('./routes/producao'));
 app.use('/vendas', require('./routes/vendas'));
+app.use('/historico', require('./routes/historico'));
 
 app.use((req, res) => {
   res.status(404).render('erro', { titulo: 'Não encontrado', mensagem: 'Página não encontrada.' });

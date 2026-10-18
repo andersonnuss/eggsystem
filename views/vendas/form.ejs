@@ -32,7 +32,7 @@
               <option value="">Escolha…</option>
               <% for (const p of produtos) { %>
                 <option value="<%= p.id %>" data-preco="<%= u.dinheiroInput(p.preco_centavos) %>" <%= p.id === item.produto_id ? 'selected' : '' %>>
-                  <%= p.nome %> · <%= u.dinheiro(p.preco_centavos) %>/<%= p.unidade %> (estoque <%= u.numero(p.estoque) %>)
+                  <%= p.nome %> · <%= u.dinheiro(p.preco_centavos) %>/<%= p.unidade %> (estoque <%= u.estoque(p) %>)
                 </option>
               <% } %>
             </select>

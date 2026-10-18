@@ -1,6 +1,7 @@
 const crypto = require('node:crypto');
 const express = require('express');
 const { db } = require('./db');
+const historico = require('./historico');
 
 function hashSenha(senha) {
   const salt = crypto.randomBytes(16);
@@ -36,14 +37,22 @@ router.post('/login', (req, res) => {
   const usuario = String(req.body.usuario || '').trim();
   const row = db.prepare('SELECT * FROM usuarios WHERE usuario = ?').get(usuario);
   if (!row || !verificarSenha(String(req.body.senha || ''), row.senha_hash)) {
+    historico.registrar(req, {
+      entidade: 'acesso', acao: 'falhou',
+      resumo: `Tentativa de login sem sucesso (usuário "${usuario.slice(0, 50)}", IP ${req.ip})`,
+    });
     return res.status(401).render('login', { titulo: 'Entrar', erro: 'Usuário ou senha inválidos.', usuario });
   }
   req.session.usuarioId = row.id;
   req.session.usuarioNome = row.usuario;
+  historico.registrar(req, { entidade: 'acesso', id: row.id, acao: 'entrou', resumo: `Entrou no sistema (IP ${req.ip})` });
   res.redirect('/');
 });
 
 router.post('/sair', (req, res) => {
+  if (req.session.usuarioId) {
+    historico.registrar(req, { entidade: 'acesso', id: req.session.usuarioId, acao: 'saiu', resumo: 'Saiu do sistema' });
+  }
   req.session = null;
   res.redirect('/login');
 });
@@ -69,6 +78,10 @@ router.post('/configurar', (req, res) => {
     .run(usuario, hashSenha(senha));
   req.session.usuarioId = Number(lastInsertRowid);
   req.session.usuarioNome = usuario;
+  historico.registrar(req, {
+    entidade: 'acesso', id: lastInsertRowid, acao: 'criou',
+    resumo: `Criou o usuário ${usuario} no primeiro acesso (IP ${req.ip})`,
+  });
   res.redirect('/');
 });
 

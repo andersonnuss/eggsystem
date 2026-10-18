@@ -20,7 +20,7 @@
   <% for (const p of estoque) { %>
     <li>
       <div class="bloco"><div class="titulo"><%= p.nome %></div></div>
-      <div class="valor" style="<%= p.estoque < 0 ? 'color:var(--alerta)' : '' %>"><%= u.numero(p.estoque) %> <%= p.unidade %></div>
+      <div class="valor" style="<%= p.estoque < 0 ? 'color:var(--alerta)' : '' %>"><%= u.estoque(p) %></div>
     </li>
   <% } %>
 </ul>

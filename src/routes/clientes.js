@@ -1,6 +1,7 @@
 const express = require('express');
-const { db } = require('../db');
-const { textoOuNull, somenteDigitos, cpfValido, semelhanca } = require('../util');
+const { db, transaction } = require('../db');
+const { textoOuNull, somenteDigitos, cpfValido, semelhanca, dinheiro } = require('../util');
+const historico = require('../historico');
 
 const router = express.Router();
 
@@ -62,9 +63,17 @@ router.get('/busca', (req, res) => {
 router.post('/', (req, res) => {
   const { cliente, erro } = lerForm(req.body);
   if (erro) return renderForm(res, cliente, erro, 400);
-  const { lastInsertRowid } = db
-    .prepare('INSERT INTO clientes (nome, cpf, telefone, endereco, observacoes) VALUES (?, ?, ?, ?, ?)')
-    .run(cliente.nome, cliente.cpf, cliente.telefone, cliente.endereco, cliente.observacoes);
+  const lastInsertRowid = transaction(() => {
+    const { lastInsertRowid } = db
+      .prepare('INSERT INTO clientes (nome, cpf, telefone, endereco, observacoes) VALUES (?, ?, ?, ?, ?)')
+      .run(cliente.nome, cliente.cpf, cliente.telefone, cliente.endereco, cliente.observacoes);
+    historico.registrar(req, {
+      entidade: 'cliente', id: lastInsertRowid, acao: 'criou',
+      resumo: `Cadastrou o cliente ${cliente.nome}`,
+      detalhes: historico.retrato('cliente', { ...cliente, ativo: 1 }),
+    });
+    return lastInsertRowid;
+  });
   req.session.aviso = `Cliente "${cliente.nome}" cadastrado.`;
   res.redirect(`/clientes/${lastInsertRowid}`);
 });
@@ -95,19 +104,40 @@ router.post('/:id', (req, res, next) => {
   cliente.id = atual.id;
   cliente.ativo = req.body.ativo ? 1 : 0;
   if (erro) return renderForm(res, cliente, erro, 400);
-  db.prepare('UPDATE clientes SET nome = ?, cpf = ?, telefone = ?, endereco = ?, observacoes = ?, ativo = ? WHERE id = ?')
-    .run(cliente.nome, cliente.cpf, cliente.telefone, cliente.endereco, cliente.observacoes, cliente.ativo, cliente.id);
+  transaction(() => {
+    db.prepare('UPDATE clientes SET nome = ?, cpf = ?, telefone = ?, endereco = ?, observacoes = ?, ativo = ? WHERE id = ?')
+      .run(cliente.nome, cliente.cpf, cliente.telefone, cliente.endereco, cliente.observacoes, cliente.ativo, cliente.id);
+    const detalhes = historico.mudancas('cliente', atual, cliente);
+    if (detalhes) {
+      historico.registrar(req, {
+        entidade: 'cliente', id: cliente.id, acao: 'alterou',
+        resumo: `Alterou o cliente ${cliente.nome}`,
+        detalhes,
+      });
+    }
+  });
   req.session.aviso = 'Cliente atualizado.';
   res.redirect(`/clientes/${cliente.id}`);
 });
 
 // Marca todas as vendas pendentes do cliente como pagas
-router.post('/:id/quitar', (req, res) => {
-  const { changes } = db
-    .prepare("UPDATE vendas SET pago = 1, data_pagamento = date('now', 'localtime') WHERE cliente_id = ? AND pago = 0")
-    .run(req.params.id);
-  req.session.aviso = changes ? `${changes} venda(s) marcada(s) como paga(s).` : 'Nada pendente.';
-  res.redirect(`/clientes/${req.params.id}`);
+router.post('/:id/quitar', (req, res, next) => {
+  const cliente = db.prepare('SELECT * FROM clientes WHERE id = ?').get(req.params.id);
+  if (!cliente) return next();
+  const pendentes = db.prepare('SELECT * FROM vendas WHERE cliente_id = ? AND pago = 0').all(cliente.id);
+  transaction(() => {
+    const marcar = db.prepare("UPDATE vendas SET pago = 1, data_pagamento = date('now', 'localtime') WHERE id = ?");
+    for (const v of pendentes) {
+      marcar.run(v.id);
+      historico.registrar(req, {
+        entidade: 'venda', id: v.id, acao: 'alterou',
+        resumo: `Marcou a venda #${v.id} de ${cliente.nome} como paga (${dinheiro(v.total_centavos)}, quitação geral)`,
+        detalhes: historico.mudancas('venda', v, { pago: 1 }),
+      });
+    }
+  });
+  req.session.aviso = pendentes.length ? `${pendentes.length} venda(s) marcada(s) como paga(s).` : 'Nada pendente.';
+  res.redirect(`/clientes/${cliente.id}`);
 });
 
 module.exports = router;

@@ -54,6 +54,17 @@ function textoOuNull(s) {
   return t === '' ? null : t;
 }
 
+function unidadeProducao(produto) {
+  return produto.unidade_producao || produto.unidade;
+}
+
+// "6,5 dúzia (78 ovo)" quando produção e venda usam unidades diferentes
+function estoque(produto) {
+  const venda = `${numero(produto.estoque)} ${produto.unidade}`;
+  if (!produto.unidade_producao) return venda;
+  return `${venda} (${numero(produto.estoque_producao)} ${produto.unidade_producao})`;
+}
+
 function somenteDigitos(s) {
   return String(s ?? '').replace(/\D/g, '');
 }
@@ -137,6 +148,8 @@ module.exports = {
   dataValida,
   textoOuNull,
   linkWhatsApp,
+  unidadeProducao,
+  estoque,
   somenteDigitos,
   cpfValido,
   cpf,

@@ -2,12 +2,13 @@
 
 Sistema web simples para gerenciar o que o sítio produz e vende para conhecidos:
 
-- **Produtos**: nome, unidade (dúzia, kg, pote…) e preço padrão
-- **Produção**: lançamentos diários de produção e de perdas/consumo
-- **Estoque**: calculado automaticamente (produção − perdas − vendas)
-- **Clientes**: contato, link direto pro WhatsApp e histórico de compras
+- **Produtos**: nome, unidade de venda (dúzia, kg, pote…) e preço padrão. Opcionalmente, uma unidade de produção diferente (ex.: produção por **ovo**, venda por **dúzia**, 12 ovos = 1 dúzia)
+- **Produção**: lançamentos diários de produção e de perdas/consumo, na unidade de produção
+- **Estoque**: calculado automaticamente (produção − perdas − vendas), mostrado nas duas unidades
+- **Clientes**: CPF (para nota fiscal de produtor), contato, link direto pro WhatsApp e histórico de compras
 - **Vendas**: vários itens por venda, controle de pago / a receber ("fiado")
 - **Painel**: resumo do mês, estoque e quem está devendo
+- **Histórico**: log de tudo que foi cadastrado, alterado ou excluído (produtos, clientes, produção, vendas) e dos acessos, com o que mudou e quem fez
 
 Feito para usar no navegador do celular. Stack: Node.js 22.13+ (usa o SQLite embutido, `node:sqlite`), Express e EJS. Não precisa de servidor de banco de dados: tudo fica em um único arquivo `.db`.
 
@@ -29,6 +30,7 @@ src/
   db.js           # conexão SQLite e migrações (PRAGMA user_version)
   auth.js         # primeiro acesso, login e logout
   consultas.js    # consultas compartilhadas (estoque etc.)
+  historico.js    # registro do log de alterações
   util.js         # formatação de dinheiro/datas
   routes/         # painel, produtos, clientes, producao, vendas
 views/            # páginas EJS (partials/topo.ejs tem o menu)

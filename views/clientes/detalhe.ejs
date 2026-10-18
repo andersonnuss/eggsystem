@@ -1,7 +1,10 @@
 <%- include('../partials/topo') %>
 <div class="cabecalho">
   <h1><%= cliente.nome %></h1>
-  <a href="/clientes/<%= cliente.id %>/editar" class="botao secundario pequeno">Editar</a>
+  <div class="acoes" style="margin:0">
+    <a href="/historico?entidade=cliente&id=<%= cliente.id %>" class="botao secundario pequeno">Histórico</a>
+    <a href="/clientes/<%= cliente.id %>/editar" class="botao secundario pequeno">Editar</a>
+  </div>
 </div>
 
 <div class="cartao">
