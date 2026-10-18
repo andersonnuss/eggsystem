@@ -10,8 +10,7 @@ Sistema web simples para gerenciar o que o sítio produz e vende para conhecidos
 - **Painel**: resumo do mês, estoque e quem está devendo
 - **Alexa**: lançamento de produção e perdas por voz ("Alexa, diga ao meu sítio que hoje a produção foi de 30 ovos")
 - **Histórico**: log de tudo que foi cadastrado, alterado ou excluído (produtos, clientes, produção, vendas, usuários) e dos acessos, com o que mudou e quem fez; dá para filtrar por pessoa
-- **Usuários**: vários usuários, todos com os mesmos acessos (o cadastro serve para saber quem fez cada coisa). Usuário desativado não entra e é desconectado na hora; cada um pode trocar a própria senha
-- **Entrar com Google**: quem tem no cadastro o e-mail de uma conta Google (ex.: @gmail.com) pode entrar sem digitar senha
+- **Usuários**: vários usuários, todos com os mesmos acessos (o cadastro serve para saber quem fez cada coisa). Cada um entra **com a conta Google (Gmail), sem senha**, ou com usuário e senha. Usuário desativado não entra e é desconectado na hora
 
 Feito para usar no navegador do celular. Stack: Node.js 22.13+ (usa o SQLite embutido, `node:sqlite`), Express e EJS. Não precisa de servidor de banco de dados: tudo fica em um único arquivo `.db`.
 
@@ -95,7 +94,9 @@ Para mudar o banco, acrescente uma nova entrada no array `migrations` em `src/db
 
 ## Entrar com Google
 
-Usuários com o e-mail de uma conta Google no cadastro (Gmail, ou um domínio próprio no Google Workspace) podem usar o botão **Entrar com Google**. O sistema só aceita contas cujo e-mail verificado pelo Google é igual ao cadastrado num usuário **ativo**; ninguém consegue criar acesso sozinho. A senha continua funcionando.
+Ao cadastrar um usuário, escolha **"Com a conta Google (Gmail)"** e informe só o nome e o e-mail: a pessoa é identificada pelo e-mail e não tem senha no sistema. Para entrar, ela clica em **Entrar com Google** e escolhe a conta. Também funciona com e-mail de Google Workspace (domínio próprio).
+
+O sistema só aceita contas cujo e-mail verificado pelo Google é igual ao de um usuário **ativo**; ninguém consegue criar acesso sozinho. Quem não tem conta Google continua com **usuário e senha** (o campo de login também aceita o e-mail). Um usuário pode trocar de forma de acesso na edição; para não ficar trancado do lado de fora, você só consegue mudar o **seu próprio** usuário para Google depois que o login com Google estiver configurado.
 
 Para ativar (precisa do endereço HTTPS público já funcionando):
 

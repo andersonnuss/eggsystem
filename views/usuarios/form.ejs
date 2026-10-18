@@ -5,28 +5,44 @@
 </div>
 <div class="cartao">
   <% if (erro) { %><div class="erro"><%= erro %></div><% } %>
-  <form method="post" action="/usuarios<%= usuario.id ? '/' + usuario.id : '' %>" class="formulario" autocomplete="off">
+  <form method="post" action="/usuarios<%= usuario.id ? '/' + usuario.id : '' %>" class="formulario" autocomplete="off" id="form-usuario">
     <label>Nome <input name="nome" value="<%= usuario.nome || '' %>" required autofocus></label>
-    <label><span>E-mail <span class="sutil">(opcional)</span></span>
-      <input name="email" type="email" inputmode="email" autocapitalize="none" value="<%= usuario.email || '' %>" placeholder="ex.: maria@gmail.com">
-    </label>
-    <p class="sutil" style="margin:-4px 0 0">
-      Com um e-mail de conta Google (como @gmail.com), a pessoa pode usar
-      <strong>Entrar com Google</strong> na tela de login<%= googleAtivo ? '' : ', assim que essa opção for configurada no servidor' %>.
-    </p>
-    <% if (usuario.id) { %>
-      <label>Usuário (login) <input value="<%= usuario.usuario %>" disabled></label>
-      <p class="sutil" style="margin:-4px 0 0">Cadastrado em <%= u.data(usuario.cadastro) %>. O login não pode ser alterado.</p>
-      <h2 style="margin-bottom:0">Redefinir senha</h2>
-      <p class="sutil" style="margin:0">Deixe em branco para manter a senha atual.</p>
-    <% } else { %>
-      <label>Usuário (login) <input name="usuario" value="<%= usuario.usuario %>" required minlength="3" maxlength="30" autocapitalize="none" placeholder="ex.: maria"></label>
+    <label>E-mail <input name="email" id="email" type="email" inputmode="email" autocapitalize="none" value="<%= usuario.email || '' %>" placeholder="ex.: maria@gmail.com"></label>
+
+    <fieldset class="opcoes">
+      <legend>Como vai entrar no sistema</legend>
+      <label class="opcao">
+        <input type="radio" name="acesso" value="google" <%= usuario.acesso === 'google' ? 'checked' : '' %>>
+        <span><strong>Com a conta Google (Gmail)</strong><br>
+          <span class="sutil">Sem senha: clica em “Entrar com Google” e escolhe a conta do e-mail acima.</span></span>
+      </label>
+      <label class="opcao">
+        <input type="radio" name="acesso" value="senha" <%= usuario.acesso !== 'google' ? 'checked' : '' %>>
+        <span><strong>Com usuário e senha</strong><br>
+          <span class="sutil">Para quem não tem conta Google.</span></span>
+      </label>
+    </fieldset>
+    <% if (!googleAtivo) { %>
+      <p class="aviso-amarelo" data-modo="google">O botão “Entrar com Google” só aparece no login depois que o Google for configurado no servidor (veja o README).</p>
     <% } %>
-    <div class="linha">
-      <label>Senha <input name="senha" type="password" autocomplete="new-password" minlength="8" <%= usuario.id ? '' : 'required' %>></label>
-      <label>Confirme <input name="confirmacao" type="password" autocomplete="new-password" minlength="8" <%= usuario.id ? '' : 'required' %>></label>
+
+    <div data-modo="senha" class="formulario">
+      <% if (usuario.id) { %>
+        <label>Usuário (login) <input value="<%= usuario.usuario %>" disabled></label>
+        <% if (usuario.acesso === 'senha') { %>
+          <p class="sutil" style="margin:-4px 0 0">Para trocar a senha, preencha abaixo; em branco mantém a atual.</p>
+        <% } %>
+      <% } else { %>
+        <label>Usuário (login) <input name="usuario" value="<%= usuario.acesso === 'senha' ? usuario.usuario : '' %>" minlength="3" maxlength="30" autocapitalize="none" placeholder="ex.: maria"></label>
+      <% } %>
+      <div class="linha">
+        <label>Senha <input name="senha" type="password" autocomplete="new-password" minlength="8"></label>
+        <label>Confirme <input name="confirmacao" type="password" autocomplete="new-password" minlength="8"></label>
+      </div>
     </div>
+
     <% if (usuario.id) { %>
+      <p class="sutil" style="margin:0">Cadastrado em <%= u.data(usuario.cadastro) %>.</p>
       <label class="check"><input type="checkbox" name="ativo" value="1" <%= usuario.ativo ? 'checked' : '' %>> Ativo (pode entrar no sistema)</label>
     <% } %>
     <div class="acoes">
@@ -35,4 +51,25 @@
     </div>
   </form>
 </div>
+<script>
+  (function () {
+    const form = document.getElementById('form-usuario');
+    const email = document.getElementById('email');
+    const radios = form.querySelectorAll('[name=acesso]');
+    const modo = () => form.querySelector('[name=acesso]:checked').value;
+    function atualizar() {
+      form.querySelectorAll('[data-modo]').forEach((el) => { el.hidden = el.dataset.modo !== modo(); });
+      email.required = modo() === 'google';
+    }
+    // E-mail do Gmail digitado num cadastro novo: já sugere entrar com o Google
+    email.addEventListener('change', () => {
+      if (!<%= usuario.id ? 'true' : 'false' %> && /@(gmail|googlemail)\.com$/i.test(email.value.trim())) {
+        form.querySelector('[name=acesso][value=google]').checked = true;
+        atualizar();
+      }
+    });
+    radios.forEach((r) => r.addEventListener('change', atualizar));
+    atualizar();
+  })();
+</script>
 <%- include('../partials/rodape') %>

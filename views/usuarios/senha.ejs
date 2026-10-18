@@ -1,15 +1,21 @@
 <%- include('../partials/topo') %>
 <h1>Trocar minha senha</h1>
 <div class="cartao">
-  <% if (erro) { %><div class="erro"><%= erro %></div><% } %>
-  <form method="post" action="/usuarios/minha-senha" class="formulario">
-    <label>Senha atual <input name="atual" type="password" autocomplete="current-password" required autofocus></label>
-    <label>Nova senha <input name="senha" type="password" autocomplete="new-password" required minlength="8"></label>
-    <label>Confirme a nova senha <input name="confirmacao" type="password" autocomplete="new-password" required minlength="8"></label>
-    <div class="acoes">
-      <button class="botao">Salvar</button>
-      <a href="/usuarios" class="botao secundario">Cancelar</a>
-    </div>
-  </form>
+  <% if (viaGoogle) { %>
+    <p style="margin-top:0">Você entra com a conta Google <strong><%= email %></strong>, então não tem senha neste sistema.</p>
+    <p class="sutil" style="margin-bottom:0">A senha é a da sua conta Google, e é trocada no próprio Google.</p>
+    <div class="acoes" style="margin-top:12px"><a href="/usuarios" class="botao secundario">Voltar</a></div>
+  <% } else { %>
+    <% if (erro) { %><div class="erro"><%= erro %></div><% } %>
+    <form method="post" action="/usuarios/minha-senha" class="formulario">
+      <label>Senha atual <input name="atual" type="password" autocomplete="current-password" required autofocus></label>
+      <label>Nova senha <input name="senha" type="password" autocomplete="new-password" required minlength="8"></label>
+      <label>Confirme a nova senha <input name="confirmacao" type="password" autocomplete="new-password" required minlength="8"></label>
+      <div class="acoes">
+        <button class="botao">Salvar</button>
+        <a href="/usuarios" class="botao secundario">Cancelar</a>
+      </div>
+    </form>
+  <% } %>
 </div>
 <%- include('../partials/rodape') %>

@@ -4,12 +4,22 @@
   <a href="/usuarios/novo" class="botao">+ Novo</a>
 </div>
 <p class="sutil" style="margin-top:0">Todos os usuários têm os mesmos acessos. O cadastro serve para saber quem fez cada alteração no <a href="/historico">Histórico</a>.</p>
+<% if (!googleAtivo && usuarios.some((x) => x.acesso === 'google')) { %>
+  <p class="aviso-amarelo" style="margin-bottom:12px">Há usuários que entram com o Google, mas o login com Google ainda não foi configurado no servidor. Até lá eles não conseguem entrar (veja o README).</p>
+<% } %>
 <ul class="lista">
   <% for (const x of usuarios) { %>
     <li class="<%= x.ativo ? '' : 'inativo' %>">
       <a class="bloco" href="/usuarios/<%= x.id %>">
         <div class="titulo"><%= x.nome || x.usuario %><%= x.id === usuarioAtual.id ? ' (você)' : '' %><%= x.ativo ? '' : ' (inativo)' %></div>
-        <div class="sutil">login: <%= x.usuario %><%= x.email ? ' · ' + x.email : '' %> ·<%= x.ultima_atividade ? 'última atividade ' + u.data(x.ultima_atividade) + ' ' + x.ultima_atividade.slice(11, 16) : 'sem atividade' %></div>
+        <div class="sutil">
+          <% if (x.acesso === 'google') { %>
+            <span class="selo google">Google</span> <%= x.email %>
+          <% } else { %>
+            login: <%= x.usuario %><%= x.email ? ' · ' + x.email : '' %>
+          <% } %>
+        </div>
+        <div class="sutil"><%= x.ultima_atividade ? 'última atividade ' + u.data(x.ultima_atividade) + ' ' + x.ultima_atividade.slice(11, 16) : 'sem atividade' %></div>
       </a>
     </li>
   <% } %>

@@ -169,6 +169,15 @@ form.inline { display: inline; }
 .selo.acao-criou, .selo.acao-entrou { background: var(--ok-fundo); color: var(--ok); }
 .selo.acao-excluiu, .selo.acao-falhou { background: var(--alerta-fundo); color: var(--alerta); }
 
+.opcoes { border: 0; margin: 0; padding: 0; display: grid; gap: 8px; }
+.opcoes legend { font-size: .9rem; color: var(--sutil); margin-bottom: 4px; padding: 0; }
+.opcao { display: flex !important; gap: 10px; align-items: flex-start; border: 1px solid var(--borda); border-radius: 8px; padding: 10px 12px; cursor: pointer; color: var(--texto) !important; font-size: 1rem !important; }
+.opcao:has(input:checked) { border-color: var(--primaria); outline: 1px solid var(--primaria); }
+.opcao input { width: 20px; min-height: 20px; margin-top: 2px; flex: none; }
+.selo.google { background: #e8f0fe; color: #1a56c4; }
+.aviso-amarelo { background: var(--alerta-fundo); color: var(--alerta); border-radius: 8px; padding: 8px 12px; margin: 0; font-size: .9rem; }
+[hidden] { display: none !important; }
+
 .separador { display: flex; align-items: center; gap: 10px; color: var(--sutil); font-size: .85rem; margin: 16px 0; }
 .separador::before, .separador::after { content: ""; flex: 1; border-top: 1px solid var(--borda); }
 .botao-google {

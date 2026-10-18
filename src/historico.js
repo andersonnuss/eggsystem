@@ -26,6 +26,7 @@ const CAMPOS = {
     usuario: ['Login', texto],
     nome: ['Nome', texto],
     email: ['E-mail', texto],
+    acesso: ['Forma de acesso', (v) => (v === 'google' ? 'conta Google' : 'usuário e senha')],
     ativo: ['Ativo', simNao],
   },
   producao: {

@@ -4,6 +4,11 @@ const { db } = require('./db');
 const historico = require('./historico');
 const google = require('./google');
 
+// Usuários que entram só com a conta Google não têm senha: guardamos este marcador,
+// que nunca confere com nenhuma senha digitada.
+const SEM_SENHA = '!';
+const temSenha = (row) => !!row && row.senha_hash !== SEM_SENHA;
+
 function hashSenha(senha) {
   const salt = crypto.randomBytes(16);
   const hash = crypto.scryptSync(senha, salt, 64);
@@ -23,10 +28,11 @@ function erroUsuario(usuario) {
   if (!/^[a-z0-9._-]{3,30}$/.test(usuario)) {
     return 'O usuário deve ter de 3 a 30 caracteres: letras minúsculas sem acento, números, ponto, hífen ou sublinhado.';
   }
-  if (db.prepare('SELECT 1 FROM usuarios WHERE usuario = ? COLLATE NOCASE').get(usuario)) {
-    return 'Já existe um usuário com esse login.';
-  }
-  return null;
+  return loginEmUso(usuario) ? 'Já existe um usuário com esse login.' : null;
+}
+
+function loginEmUso(usuario) {
+  return !!db.prepare('SELECT 1 FROM usuarios WHERE usuario = ? COLLATE NOCASE').get(usuario);
 }
 
 // E-mail opcional (já em minúsculas); não pode repetir entre usuários
@@ -69,7 +75,20 @@ router.get('/login', (req, res) => {
 
 router.post('/login', (req, res) => {
   const usuario = String(req.body.usuario || '').trim();
-  const row = db.prepare('SELECT * FROM usuarios WHERE usuario = ? COLLATE NOCASE').get(usuario);
+  // Aceita o login ou o e-mail cadastrado
+  const row = db.prepare(`
+    SELECT * FROM usuarios WHERE usuario = ?1 COLLATE NOCASE OR email = ?2
+    ORDER BY usuario = ?1 COLLATE NOCASE DESC LIMIT 1
+  `).get(usuario, usuario.toLowerCase());
+  if (row && !temSenha(row)) {
+    historico.registrar(req, {
+      entidade: 'acesso', acao: 'falhou',
+      resumo: `Tentativa de login com senha de usuário que entra pelo Google (${row.usuario}, IP ${req.ip})`,
+    });
+    return res.status(401).render('login', {
+      titulo: 'Entrar', usuario, erro: 'Este usuário entra com a conta Google: use o botão "Entrar com Google".',
+    });
+  }
   const senhaOk = row && verificarSenha(String(req.body.senha || ''), row.senha_hash);
   if (!senhaOk || !row.ativo) {
     historico.registrar(req, {
@@ -157,4 +176,6 @@ router.post('/configurar', (req, res) => {
   res.redirect('/');
 });
 
-module.exports = { router, exigirLogin, hashSenha, verificarSenha, erroUsuario, erroEmail, erroSenha };
+module.exports = {
+  router, exigirLogin, hashSenha, verificarSenha, erroUsuario, erroEmail, erroSenha, loginEmUso, SEM_SENHA, temSenha,
+};
