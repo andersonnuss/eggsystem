@@ -1,0 +1,15 @@
+<%- include('../partials/topo') %>
+<h1>Trocar minha senha</h1>
+<div class="cartao">
+  <% if (erro) { %><div class="erro"><%= erro %></div><% } %>
+  <form method="post" action="/usuarios/minha-senha" class="formulario">
+    <label>Senha atual <input name="atual" type="password" autocomplete="current-password" required autofocus></label>
+    <label>Nova senha <input name="senha" type="password" autocomplete="new-password" required minlength="8"></label>
+    <label>Confirme a nova senha <input name="confirmacao" type="password" autocomplete="new-password" required minlength="8"></label>
+    <div class="acoes">
+      <button class="botao">Salvar</button>
+      <a href="/usuarios" class="botao secundario">Cancelar</a>
+    </div>
+  </form>
+</div>
+<%- include('../partials/rodape') %>

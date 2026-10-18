@@ -22,6 +22,11 @@ const CAMPOS = {
     observacoes: ['Observações', texto],
     ativo: ['Ativo', simNao],
   },
+  usuario: {
+    usuario: ['Login', texto],
+    nome: ['Nome', texto],
+    ativo: ['Ativo', simNao],
+  },
   producao: {
     produto: ['Produto', texto],
     tipo: ['Tipo', (v) => (v === 'perda' ? 'perda/consumo' : 'produção')],

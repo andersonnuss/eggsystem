@@ -4,7 +4,8 @@
   <p class="sutil">Crie o usuário que vai acessar o sistema.</p>
   <% if (erro) { %><div class="erro"><%= erro %></div><% } %>
   <form method="post" action="/configurar" class="formulario">
-    <label>Usuário <input name="usuario" value="<%= usuario %>" autocomplete="username" autocapitalize="none" required minlength="3" autofocus></label>
+    <label>Seu nome <input name="nome" value="<%= nome %>" autocomplete="name" required autofocus></label>
+    <label>Usuário (login) <input name="usuario" value="<%= usuario %>" autocomplete="username" autocapitalize="none" required minlength="3" maxlength="30" placeholder="ex.: anderson"></label>
     <label>Senha <input name="senha" type="password" autocomplete="new-password" required minlength="8"></label>
     <label>Confirme a senha <input name="confirmacao" type="password" autocomplete="new-password" required minlength="8"></label>
     <button class="botao">Criar e entrar</button>

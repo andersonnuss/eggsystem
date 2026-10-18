@@ -1,0 +1,31 @@
+<%- include('../partials/topo') %>
+<div class="cabecalho">
+  <h1><%= titulo %></h1>
+  <% if (usuario.id) { %><a href="/historico?quem=<%= encodeURIComponent(usuario.usuario) %>" class="botao secundario pequeno">O que fez</a><% } %>
+</div>
+<div class="cartao">
+  <% if (erro) { %><div class="erro"><%= erro %></div><% } %>
+  <form method="post" action="/usuarios<%= usuario.id ? '/' + usuario.id : '' %>" class="formulario" autocomplete="off">
+    <label>Nome <input name="nome" value="<%= usuario.nome || '' %>" required autofocus></label>
+    <% if (usuario.id) { %>
+      <label>Usuário (login) <input value="<%= usuario.usuario %>" disabled></label>
+      <p class="sutil" style="margin:-4px 0 0">Cadastrado em <%= u.data(usuario.cadastro) %>. O login não pode ser alterado.</p>
+      <h2 style="margin-bottom:0">Redefinir senha</h2>
+      <p class="sutil" style="margin:0">Deixe em branco para manter a senha atual.</p>
+    <% } else { %>
+      <label>Usuário (login) <input name="usuario" value="<%= usuario.usuario %>" required minlength="3" maxlength="30" autocapitalize="none" placeholder="ex.: maria"></label>
+    <% } %>
+    <div class="linha">
+      <label>Senha <input name="senha" type="password" autocomplete="new-password" minlength="8" <%= usuario.id ? '' : 'required' %>></label>
+      <label>Confirme <input name="confirmacao" type="password" autocomplete="new-password" minlength="8" <%= usuario.id ? '' : 'required' %>></label>
+    </div>
+    <% if (usuario.id) { %>
+      <label class="check"><input type="checkbox" name="ativo" value="1" <%= usuario.ativo ? 'checked' : '' %>> Ativo (pode entrar no sistema)</label>
+    <% } %>
+    <div class="acoes">
+      <button class="botao">Salvar</button>
+      <a href="/usuarios" class="botao secundario">Cancelar</a>
+    </div>
+  </form>
+</div>
+<%- include('../partials/rodape') %>

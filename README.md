@@ -9,7 +9,8 @@ Sistema web simples para gerenciar o que o sítio produz e vende para conhecidos
 - **Vendas**: vários itens por venda, controle de pago / a receber ("fiado")
 - **Painel**: resumo do mês, estoque e quem está devendo
 - **Alexa**: lançamento de produção e perdas por voz ("Alexa, diga ao meu sítio que hoje a produção foi de 30 ovos")
-- **Histórico**: log de tudo que foi cadastrado, alterado ou excluído (produtos, clientes, produção, vendas) e dos acessos, com o que mudou e quem fez
+- **Histórico**: log de tudo que foi cadastrado, alterado ou excluído (produtos, clientes, produção, vendas, usuários) e dos acessos, com o que mudou e quem fez; dá para filtrar por pessoa
+- **Usuários**: vários usuários, todos com os mesmos acessos (o cadastro serve para saber quem fez cada coisa). Usuário desativado não entra e é desconectado na hora; cada um pode trocar a própria senha
 
 Feito para usar no navegador do celular. Stack: Node.js 22.13+ (usa o SQLite embutido, `node:sqlite`), Express e EJS. Não precisa de servidor de banco de dados: tudo fica em um único arquivo `.db`.
 

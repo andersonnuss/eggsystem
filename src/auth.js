@@ -17,12 +17,36 @@ function verificarSenha(senha, armazenado) {
   return crypto.timingSafeEqual(hash, esperado);
 }
 
+// Login: minúsculas, números, ponto, hífen e sublinhado
+function erroUsuario(usuario) {
+  if (!/^[a-z0-9._-]{3,30}$/.test(usuario)) {
+    return 'O usuário deve ter de 3 a 30 caracteres: letras minúsculas sem acento, números, ponto, hífen ou sublinhado.';
+  }
+  if (db.prepare('SELECT 1 FROM usuarios WHERE usuario = ? COLLATE NOCASE').get(usuario)) {
+    return 'Já existe um usuário com esse login.';
+  }
+  return null;
+}
+
+function erroSenha(senha, confirmacao) {
+  if (senha.length < 8) return 'A senha precisa ter ao menos 8 caracteres.';
+  if (senha !== confirmacao) return 'As senhas não conferem.';
+  return null;
+}
+
 function existeUsuario() {
   return !!db.prepare('SELECT 1 FROM usuarios LIMIT 1').get();
 }
 
+// Confere a cada requisição se o usuário da sessão ainda existe e está ativo
 function exigirLogin(req, res, next) {
-  if (req.session.usuarioId) return next();
+  const usuario = req.session.usuarioId
+    && db.prepare('SELECT id, usuario, nome FROM usuarios WHERE id = ? AND ativo = 1').get(req.session.usuarioId);
+  if (usuario) {
+    res.locals.usuarioAtual = usuario;
+    return next();
+  }
+  req.session = null;
   res.redirect(existeUsuario() ? '/login' : '/configurar');
 }
 
@@ -35,13 +59,15 @@ router.get('/login', (req, res) => {
 
 router.post('/login', (req, res) => {
   const usuario = String(req.body.usuario || '').trim();
-  const row = db.prepare('SELECT * FROM usuarios WHERE usuario = ?').get(usuario);
-  if (!row || !verificarSenha(String(req.body.senha || ''), row.senha_hash)) {
+  const row = db.prepare('SELECT * FROM usuarios WHERE usuario = ? COLLATE NOCASE').get(usuario);
+  const senhaOk = row && verificarSenha(String(req.body.senha || ''), row.senha_hash);
+  if (!senhaOk || !row.ativo) {
     historico.registrar(req, {
       entidade: 'acesso', acao: 'falhou',
-      resumo: `Tentativa de login sem sucesso (usuário "${usuario.slice(0, 50)}", IP ${req.ip})`,
+      resumo: `Tentativa de login sem sucesso (usuário "${usuario.slice(0, 50)}"${senhaOk ? ', inativo' : ''}, IP ${req.ip})`,
     });
-    return res.status(401).render('login', { titulo: 'Entrar', erro: 'Usuário ou senha inválidos.', usuario });
+    const erro = senhaOk ? 'Este usuário está desativado.' : 'Usuário ou senha inválidos.';
+    return res.status(401).render('login', { titulo: 'Entrar', erro, usuario });
   }
   req.session.usuarioId = row.id;
   req.session.usuarioNome = row.usuario;
@@ -57,32 +83,30 @@ router.post('/sair', (req, res) => {
   res.redirect('/login');
 });
 
-// Primeiro acesso: cria o usuário administrador. Fica indisponível depois disso.
+// Primeiro acesso: cria o primeiro usuário. Fica indisponível depois disso.
 router.get('/configurar', (req, res) => {
   if (existeUsuario()) return res.redirect('/login');
-  res.render('configurar', { titulo: 'Primeiro acesso', erro: null, usuario: '' });
+  res.render('configurar', { titulo: 'Primeiro acesso', erro: null, usuario: '', nome: '' });
 });
 
 router.post('/configurar', (req, res) => {
   if (existeUsuario()) return res.redirect('/login');
-  const usuario = String(req.body.usuario || '').trim();
+  const usuario = String(req.body.usuario || '').trim().toLowerCase();
+  const nome = String(req.body.nome || '').trim();
   const senha = String(req.body.senha || '');
-  let erro = null;
-  if (usuario.length < 3) erro = 'O usuário precisa ter ao menos 3 caracteres.';
-  else if (senha.length < 8) erro = 'A senha precisa ter ao menos 8 caracteres.';
-  else if (senha !== req.body.confirmacao) erro = 'As senhas não conferem.';
-  if (erro) return res.status(400).render('configurar', { titulo: 'Primeiro acesso', erro, usuario });
+  const erro = (!nome && 'Informe seu nome.') || erroUsuario(usuario) || erroSenha(senha, req.body.confirmacao);
+  if (erro) return res.status(400).render('configurar', { titulo: 'Primeiro acesso', erro, usuario, nome });
 
   const { lastInsertRowid } = db
-    .prepare('INSERT INTO usuarios (usuario, senha_hash) VALUES (?, ?)')
-    .run(usuario, hashSenha(senha));
+    .prepare("INSERT INTO usuarios (usuario, nome, senha_hash, criado_em) VALUES (?, ?, ?, datetime('now'))")
+    .run(usuario, nome, hashSenha(senha));
   req.session.usuarioId = Number(lastInsertRowid);
   req.session.usuarioNome = usuario;
   historico.registrar(req, {
-    entidade: 'acesso', id: lastInsertRowid, acao: 'criou',
-    resumo: `Criou o usuário ${usuario} no primeiro acesso (IP ${req.ip})`,
+    entidade: 'usuario', id: lastInsertRowid, acao: 'criou',
+    resumo: `Criou o usuário ${usuario} (${nome}) no primeiro acesso (IP ${req.ip})`,
   });
   res.redirect('/');
 });
 
-module.exports = { router, exigirLogin };
+module.exports = { router, exigirLogin, hashSenha, verificarSenha, erroUsuario, erroSenha };

@@ -56,6 +56,7 @@ app.use('/producao', require('./routes/producao'));
 app.use('/vendas', require('./routes/vendas'));
 app.use('/historico', require('./routes/historico'));
 app.use('/integracoes', require('./routes/integracoes'));
+app.use('/usuarios', require('./routes/usuarios'));
 
 app.use((req, res) => {
   res.status(404).render('erro', { titulo: 'Não encontrado', mensagem: 'Página não encontrada.' });

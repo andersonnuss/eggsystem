@@ -11,9 +11,11 @@
 <body>
 <header class="topo">
   <a href="/" class="marca">🥚 Eggsystem</a>
-  <% if (usuarioNome) { %>
+  <% if (usuarioNome) {
+       const quem = typeof usuarioAtual !== 'undefined' ? (usuarioAtual.nome || usuarioAtual.usuario).split(' ')[0] : usuarioNome; %>
     <div class="topo-acoes">
-      <a href="/historico" class="<%= caminho.startsWith('/historico') ? 'ativo' : '' %>">🕘 Histórico</a>
+      <a href="/historico" class="<%= caminho.startsWith('/historico') ? 'ativo' : '' %>" title="Histórico">🕘<span class="rotulo"> Histórico</span></a>
+      <a href="/usuarios" class="<%= caminho.startsWith('/usuarios') ? 'ativo' : '' %>" title="Usuários">👤 <%= quem %></a>
       <form method="post" action="/sair"><button class="link">Sair</button></form>
     </div>
   <% } %>

@@ -95,6 +95,13 @@ const migrations = [
   CREATE INDEX idx_historico_entidade ON historico(entidade, entidade_id);
   CREATE INDEX idx_historico_data ON historico(criado_em);
   `,
+  `
+  -- Vários usuários, todos com os mesmos acessos; inativo não consegue entrar
+  ALTER TABLE usuarios ADD COLUMN nome TEXT;
+  ALTER TABLE usuarios ADD COLUMN ativo INTEGER NOT NULL DEFAULT 1;
+  ALTER TABLE usuarios ADD COLUMN criado_em TEXT;
+  UPDATE usuarios SET criado_em = datetime('now');
+  `,
 ];
 
 function migrate() {

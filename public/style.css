@@ -50,6 +50,10 @@ h2 { font-size: 1.1rem; margin: 20px 0 8px; }
 .topo-acoes { display: flex; align-items: center; gap: 8px; }
 .topo-acoes a { text-decoration: none; padding: 6px; }
 .topo-acoes a.ativo { font-weight: 600; }
+@media (max-width: 420px) {
+  .topo-acoes { gap: 2px; }
+  .topo-acoes .rotulo { display: none; }
+}
 
 /* Menu: barra inferior no celular, faixa superior no computador */
 .menu {

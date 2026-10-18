@@ -1,12 +1,16 @@
 <%- include('partials/topo') %>
 <h1>Histórico</h1>
-<% const link = (params) => '/historico' + (Object.keys(params).length ? '?' + new URLSearchParams(params) : ''); %>
+<% const link = (params) => '/historico' + (Object.keys(params).length ? '?' + new URLSearchParams(params) : '');
+   const comQuem = quem ? { quem } : {}; %>
 <div class="filtros">
-  <a href="/historico" class="<%= !entidade ? 'ativo' : '' %>">Tudo</a>
+  <a href="<%= link(comQuem) %>" class="<%= !entidade ? 'ativo' : '' %>">Tudo</a>
   <% for (const [chave, nome] of Object.entries(entidades)) { %>
-    <a href="<%= link({ entidade: chave }) %>" class="<%= entidade === chave && !id ? 'ativo' : '' %>"><%= nome %></a>
+    <a href="<%= link({ entidade: chave, ...comQuem }) %>" class="<%= entidade === chave && !id ? 'ativo' : '' %>"><%= nome %></a>
   <% } %>
 </div>
+<% if (quem) { %>
+  <p class="sutil">Mostrando só o que <strong><%= nomeQuem %></strong> fez. <a href="<%= link(entidade ? { entidade } : {}) %>">Ver de todos</a></p>
+<% } %>
 <% if (id) { %>
   <p class="sutil">Mostrando apenas o registro #<%= id %>. <a href="<%= link({ entidade }) %>">Ver todos de <%= entidades[entidade].toLowerCase() %></a></p>
 <% } %>
@@ -17,7 +21,9 @@
     <li>
       <div class="bloco">
         <div><span class="selo acao-<%= r.acao %>"><%= r.acao %></span> <%= r.resumo %></div>
-        <div class="sutil"><%= u.data(r.quando) %> <%= r.quando.slice(11, 16) %><%= r.usuario ? ' · ' + r.usuario : '' %></div>
+        <div class="sutil"><%= u.data(r.quando) %> <%= r.quando.slice(11, 16) %>
+          <% if (r.usuario) { %> · <a href="<%= link({ quem: r.usuario }) %>"><%= r.autor %></a><% } %>
+        </div>
         <% if (r.detalhes) { %>
           <details>
             <summary class="sutil">detalhes</summary>
@@ -39,7 +45,7 @@
 </ul>
 
 <div class="acoes">
-  <% const base = entidade ? { entidade, ...(id ? { id } : {}) } : {}; %>
+  <% const base = { ...(entidade ? { entidade, ...(id ? { id } : {}) } : {}), ...comQuem }; %>
   <% if (pagina > 1) { %><a class="botao secundario" href="<%= link({ ...base, pagina: pagina - 1 }) %>">← Mais recentes</a><% } %>
   <% if (temMais) { %><a class="botao secundario" href="<%= link({ ...base, pagina: pagina + 1 }) %>">Mais antigos →</a><% } %>
 </div>
