@@ -1,0 +1,151 @@
+:root {
+  --fundo: #f7f3ec;
+  --superficie: #ffffff;
+  --texto: #2b2620;
+  --sutil: #776d60;
+  --borda: #e3dacb;
+  --primaria: #7a5c2e;
+  --primaria-texto: #ffffff;
+  --ok: #2f7d4a;
+  --ok-fundo: #e3f3e8;
+  --alerta: #a5462c;
+  --alerta-fundo: #fbe7e1;
+  --raio: 10px;
+  --menu-altura: 64px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fundo: #1c1a17;
+    --superficie: #272420;
+    --texto: #eee8de;
+    --sutil: #a99f92;
+    --borda: #3c3730;
+    --primaria: #d9a95b;
+    --primaria-texto: #1c1a17;
+    --ok: #7cc996;
+    --ok-fundo: #1f3627;
+    --alerta: #f0957b;
+    --alerta-fundo: #42251d;
+  }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--fundo);
+  color: var(--texto);
+  padding-bottom: calc(var(--menu-altura) + env(safe-area-inset-bottom));
+}
+a { color: var(--primaria); }
+h1 { font-size: 1.4rem; margin: 0 0 12px; }
+h2 { font-size: 1.1rem; margin: 20px 0 8px; }
+
+.topo {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; background: var(--superficie); border-bottom: 1px solid var(--borda);
+}
+.marca { font-weight: 700; text-decoration: none; color: var(--texto); font-size: 1.1rem; }
+
+/* Menu: barra inferior no celular, faixa superior no computador */
+.menu {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
+  display: flex; background: var(--superficie); border-top: 1px solid var(--borda);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.menu a {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: var(--menu-altura); font-size: .72rem; text-decoration: none; color: var(--sutil);
+}
+.menu a span { font-size: 1.35rem; line-height: 1.2; }
+.menu a.ativo { color: var(--primaria); font-weight: 600; }
+
+@media (min-width: 760px) {
+  body { padding-bottom: 0; }
+  .menu { position: static; border-top: 0; border-bottom: 1px solid var(--borda); justify-content: center; }
+  .menu a { flex: 0 0 auto; flex-direction: row; gap: 6px; height: 48px; padding: 0 16px; font-size: .95rem; }
+  .menu a span { font-size: 1.1rem; }
+}
+
+.conteudo { max-width: 900px; margin: 0 auto; padding: 16px; }
+
+.cartao {
+  background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio);
+  padding: 16px; margin-bottom: 12px;
+}
+.estreito { max-width: 420px; margin: 24px auto; }
+.sutil { color: var(--sutil); font-size: .9rem; }
+.direita { text-align: right; }
+
+.cabecalho { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.cabecalho h1 { margin: 0; }
+
+.aviso, .erro { padding: 10px 12px; border-radius: var(--raio); margin-bottom: 12px; }
+.aviso { background: var(--ok-fundo); color: var(--ok); }
+.erro { background: var(--alerta-fundo); color: var(--alerta); }
+
+/* Formulários: campos grandes para toque */
+.formulario { display: grid; gap: 12px; }
+.formulario label { display: grid; gap: 4px; font-size: .9rem; color: var(--sutil); }
+.linha { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+input, select, textarea {
+  font: inherit; color: var(--texto); background: var(--fundo);
+  border: 1px solid var(--borda); border-radius: 8px; padding: 10px 12px; min-height: 44px; width: 100%;
+}
+textarea { min-height: 70px; resize: vertical; }
+input:focus, select:focus, textarea:focus { outline: 2px solid var(--primaria); outline-offset: -1px; }
+.check { display: flex !important; align-items: center; gap: 8px; color: var(--texto) !important; font-size: 1rem !important; }
+.check input { width: 22px; min-height: 22px; }
+
+.botao {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  font: inherit; font-weight: 600; text-decoration: none; cursor: pointer;
+  background: var(--primaria); color: var(--primaria-texto);
+  border: 0; border-radius: 8px; padding: 10px 16px; min-height: 44px;
+}
+.botao.secundario { background: transparent; color: var(--primaria); border: 1px solid var(--primaria); }
+.botao.perigo { background: transparent; color: var(--alerta); border: 1px solid var(--alerta); }
+.botao.pequeno { min-height: 34px; padding: 4px 10px; font-size: .85rem; }
+.link { background: none; border: 0; color: var(--primaria); font: inherit; cursor: pointer; padding: 6px; }
+.acoes { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+form.inline { display: inline; }
+
+/* Listas em cartões (melhor que tabelas no celular) */
+.lista { list-style: none; margin: 0; padding: 0; }
+.lista li {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio);
+  padding: 12px 14px; margin-bottom: 8px;
+}
+.lista li a.bloco { flex: 1; text-decoration: none; color: inherit; min-width: 0; }
+.lista .titulo { font-weight: 600; }
+.lista .valor { font-weight: 600; white-space: nowrap; text-align: right; }
+.inativo { opacity: .55; }
+
+.selo { display: inline-block; font-size: .75rem; font-weight: 600; padding: 2px 8px; border-radius: 99px; }
+.selo.pago { background: var(--ok-fundo); color: var(--ok); }
+.selo.pendente { background: var(--alerta-fundo); color: var(--alerta); }
+
+/* Painel */
+.numeros { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+@media (min-width: 760px) { .numeros { grid-template-columns: repeat(4, 1fr); } }
+.numero { background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio); padding: 12px 14px; }
+.numero .rotulo { font-size: .8rem; color: var(--sutil); }
+.numero .valor { font-size: 1.3rem; font-weight: 700; }
+.numero.alerta .valor { color: var(--alerta); }
+
+/* Itens da venda */
+.item-venda { display: grid; grid-template-columns: 1fr 90px 110px 40px; gap: 8px; align-items: end; }
+.item-venda .remover { min-height: 44px; }
+@media (max-width: 520px) {
+  .item-venda { grid-template-columns: 1fr 1fr 40px; }
+  .item-venda .campo-produto { grid-column: 1 / -1; }
+}
+.total { font-size: 1.25rem; font-weight: 700; text-align: right; }
+
+.filtros { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.filtros a { text-decoration: none; padding: 6px 12px; border: 1px solid var(--borda); border-radius: 99px; color: var(--texto); font-size: .9rem; background: var(--superficie); }
+.filtros a.ativo { background: var(--primaria); color: var(--primaria-texto); border-color: var(--primaria); }
+
+.vazio { text-align: center; color: var(--sutil); padding: 24px 0; }

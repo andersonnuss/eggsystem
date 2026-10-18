@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#7a5c2e">
+  <title><%= titulo %> · Eggsystem</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="icon" href="/icone.svg" type="image/svg+xml">
+</head>
+<body>
+<header class="topo">
+  <a href="/" class="marca">🥚 Eggsystem</a>
+  <% if (usuarioNome) { %>
+    <form method="post" action="/sair"><button class="link">Sair</button></form>
+  <% } %>
+</header>
+<% if (usuarioNome) {
+  const itens = [
+    ['/', 'Painel', '📊'],
+    ['/vendas', 'Vendas', '🧾'],
+    ['/producao', 'Produção', '🧺'],
+    ['/clientes', 'Clientes', '👥'],
+    ['/produtos', 'Produtos', '🥚'],
+  ];
+%>
+<nav class="menu">
+  <% for (const [href, nome, icone] of itens) {
+       const ativo = href === '/' ? caminho === '/' : caminho.startsWith(href); %>
+    <a href="<%= href %>" class="<%= ativo ? 'ativo' : '' %>"><span><%= icone %></span><%= nome %></a>
+  <% } %>
+</nav>
+<% } %>
+<main class="conteudo">
+<% if (aviso) { %><div class="aviso"><%= aviso %></div><% } %>

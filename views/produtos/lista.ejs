@@ -1,0 +1,23 @@
+<%- include('../partials/topo') %>
+<div class="cabecalho">
+  <h1>Produtos</h1>
+  <a href="/produtos/novo" class="botao">+ Novo</a>
+</div>
+<% if (!produtos.length) { %>
+  <p class="vazio">Nenhum produto ainda. Comece cadastrando o que o sítio produz.</p>
+<% } %>
+<ul class="lista">
+  <% for (const p of produtos) { %>
+    <li class="<%= p.ativo ? '' : 'inativo' %>">
+      <a class="bloco" href="/produtos/<%= p.id %>">
+        <div class="titulo"><%= p.nome %><%= p.ativo ? '' : ' (inativo)' %></div>
+        <div class="sutil"><%= u.dinheiro(p.preco_centavos) %> / <%= p.unidade %></div>
+      </a>
+      <div class="valor">
+        <div><%= u.numero(p.estoque) %></div>
+        <div class="sutil">em estoque</div>
+      </div>
+    </li>
+  <% } %>
+</ul>
+<%- include('../partials/rodape') %>

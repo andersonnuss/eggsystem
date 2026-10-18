@@ -1,0 +1,35 @@
+<%- include('../partials/topo') %>
+<div class="cabecalho">
+  <h1>Venda #<%= venda.id %></h1>
+  <span class="selo <%= venda.pago ? 'pago' : 'pendente' %>"><%= venda.pago ? 'pago' : 'a receber' %></span>
+</div>
+
+<div class="cartao">
+  <div><a href="/clientes/<%= venda.cliente_id %>"><strong><%= venda.cliente %></strong></a></div>
+  <div class="sutil"><%= u.data(venda.data) %><%= venda.pago && venda.data_pagamento ? ' · pago em ' + u.data(venda.data_pagamento) : '' %></div>
+  <% if (venda.observacao) { %><div class="sutil"><%= venda.observacao %></div><% } %>
+</div>
+
+<ul class="lista">
+  <% for (const i of itens) { %>
+    <li>
+      <div class="bloco">
+        <div class="titulo"><%= i.produto %></div>
+        <div class="sutil"><%= u.numero(i.quantidade) %> <%= i.unidade %> × <%= u.dinheiro(i.preco_unit_centavos) %></div>
+      </div>
+      <div class="valor"><%= u.dinheiro(Math.round(i.quantidade * i.preco_unit_centavos)) %></div>
+    </li>
+  <% } %>
+</ul>
+<div class="total">Total: <%= u.dinheiro(venda.total_centavos) %></div>
+
+<div class="acoes" style="margin-top:16px">
+  <form method="post" action="/vendas/<%= venda.id %>/pagamento" class="inline">
+    <input type="hidden" name="pago" value="<%= venda.pago ? '0' : '1' %>">
+    <button class="botao <%= venda.pago ? 'secundario' : '' %>"><%= venda.pago ? 'Marcar como a receber' : 'Marcar como pago' %></button>
+  </form>
+  <form method="post" action="/vendas/<%= venda.id %>/excluir" class="inline" onsubmit="return confirm('Excluir esta venda? O estoque volta a contar esses itens.')">
+    <button class="botao perigo">Excluir</button>
+  </form>
+</div>
+<%- include('../partials/rodape') %>

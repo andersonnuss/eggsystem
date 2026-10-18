@@ -1,0 +1,20 @@
+{
+  "name": "eggsystem",
+  "version": "0.1.0",
+  "description": "Gestão de produtos do sítio: produção, estoque, clientes e vendas",
+  "main": "src/server.js",
+  "private": true,
+  "scripts": {
+    "start": "node --env-file-if-exists=.env src/server.js",
+    "dev": "node --watch --env-file-if-exists=.env src/server.js"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "type": "commonjs",
+  "dependencies": {
+    "cookie-session": "^2.1.1",
+    "ejs": "^7.0.1",
+    "express": "^5.3.0"
+  }
+}

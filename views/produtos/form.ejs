@@ -1,0 +1,27 @@
+<%- include('../partials/topo') %>
+<h1><%= titulo %></h1>
+<div class="cartao">
+  <% if (erro) { %><div class="erro"><%= erro %></div><% } %>
+  <form method="post" action="/produtos<%= produto.id ? '/' + produto.id : '' %>" class="formulario">
+    <label>Nome <input name="nome" value="<%= produto.nome %>" required placeholder="Ex.: Ovos caipira"></label>
+    <div class="linha">
+      <label>Unidade
+        <select name="unidade">
+          <% const lista = unidades.includes(produto.unidade) ? unidades : [produto.unidade, ...unidades]; %>
+          <% for (const un of lista) { %>
+            <option <%= un === produto.unidade ? 'selected' : '' %>><%= un %></option>
+          <% } %>
+        </select>
+      </label>
+      <label>Preço (R$) <input name="preco" inputmode="decimal" value="<%= u.dinheiroInput(produto.preco_centavos) %>"></label>
+    </div>
+    <% if (produto.id) { %>
+      <label class="check"><input type="checkbox" name="ativo" value="1" <%= produto.ativo ? 'checked' : '' %>> Ativo (aparece em vendas e produção)</label>
+    <% } %>
+    <div class="acoes">
+      <button class="botao">Salvar</button>
+      <a href="/produtos" class="botao secundario">Cancelar</a>
+    </div>
+  </form>
+</div>
+<%- include('../partials/rodape') %>

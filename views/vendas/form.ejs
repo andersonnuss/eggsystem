@@ -1,0 +1,107 @@
+<%- include('../partials/topo') %>
+<h1>Nova venda</h1>
+<% if (!clientes.length || !produtos.length) { %>
+  <div class="cartao">
+    <p>Para registrar vendas, cadastre ao menos
+      <% if (!clientes.length) { %><a href="/clientes/novo">um cliente</a><% } %>
+      <% if (!clientes.length && !produtos.length) { %> e <% } %>
+      <% if (!produtos.length) { %><a href="/produtos/novo">um produto</a><% } %>.
+    </p>
+  </div>
+<% } else { %>
+<div class="cartao">
+  <% if (erro) { %><div class="erro"><%= erro %></div><% } %>
+  <form method="post" action="/vendas" class="formulario" id="form-venda">
+    <div class="linha">
+      <label>Cliente
+        <select name="cliente_id" required>
+          <option value="">Escolha…</option>
+          <% for (const c of clientes) { %>
+            <option value="<%= c.id %>" <%= c.id === form.cliente_id ? 'selected' : '' %>><%= c.nome %></option>
+          <% } %>
+        </select>
+      </label>
+      <label>Data <input type="date" name="data" value="<%= form.data %>" required></label>
+    </div>
+
+    <div id="itens" class="formulario">
+      <% for (const item of form.itens) { %>
+        <div class="item-venda">
+          <label class="campo-produto">Produto
+            <select name="produto_id">
+              <option value="">Escolha…</option>
+              <% for (const p of produtos) { %>
+                <option value="<%= p.id %>" data-preco="<%= u.dinheiroInput(p.preco_centavos) %>" <%= p.id === item.produto_id ? 'selected' : '' %>>
+                  <%= p.nome %> · <%= u.dinheiro(p.preco_centavos) %>/<%= p.unidade %> (estoque <%= u.numero(p.estoque) %>)
+                </option>
+              <% } %>
+            </select>
+          </label>
+          <label>Qtd <input name="quantidade" inputmode="decimal" value="<%= item.quantidade %>"></label>
+          <label>Preço un. <input name="preco" inputmode="decimal" value="<%= item.preco %>" placeholder="padrão"></label>
+          <button type="button" class="botao perigo remover" title="Remover item" aria-label="Remover item">✕</button>
+        </div>
+      <% } %>
+    </div>
+    <button type="button" class="botao secundario" id="adicionar">+ Adicionar item</button>
+
+    <div class="total">Total: <span id="total">R$ 0,00</span></div>
+
+    <label class="check"><input type="checkbox" name="pago" value="1" <%= form.pago ? 'checked' : '' %>> Já foi pago</label>
+    <label>Observação <input name="observacao" value="<%= form.observacao || '' %>" placeholder="opcional"></label>
+
+    <div class="acoes">
+      <button class="botao">Registrar venda</button>
+      <a href="/vendas" class="botao secundario">Cancelar</a>
+    </div>
+  </form>
+</div>
+
+<script>
+  (function () {
+    const itens = document.getElementById('itens');
+    const modelo = itens.querySelector('.item-venda').cloneNode(true);
+    modelo.querySelectorAll('input').forEach((i) => (i.value = ''));
+    modelo.querySelector('select').value = '';
+
+    const num = (s) => Number(String(s || '').replace(/\./g, '').replace(',', '.')) || 0;
+    const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+
+    function precoPadrao(linha) {
+      const opt = linha.querySelector('select').selectedOptions[0];
+      return opt && opt.dataset.preco ? opt.dataset.preco : '';
+    }
+
+    function atualizar() {
+      let total = 0;
+      itens.querySelectorAll('.item-venda').forEach((linha) => {
+        const preco = linha.querySelector('[name=preco]');
+        preco.placeholder = precoPadrao(linha) || 'padrão';
+        const qtd = num(linha.querySelector('[name=quantidade]').value);
+        total += qtd * num(preco.value || preco.placeholder);
+      });
+      document.getElementById('total').textContent = brl.format(total);
+    }
+
+    document.getElementById('adicionar').addEventListener('click', () => {
+      const nova = modelo.cloneNode(true);
+      itens.appendChild(nova);
+      nova.querySelector('select').focus();
+      atualizar();
+    });
+
+    itens.addEventListener('click', (e) => {
+      if (!e.target.classList.contains('remover')) return;
+      const linhas = itens.querySelectorAll('.item-venda');
+      if (linhas.length > 1) e.target.closest('.item-venda').remove();
+      else linhas[0].querySelectorAll('input, select').forEach((i) => (i.value = ''));
+      atualizar();
+    });
+
+    itens.addEventListener('input', atualizar);
+    itens.addEventListener('change', atualizar);
+    atualizar();
+  })();
+</script>
+<% } %>
+<%- include('../partials/rodape') %>

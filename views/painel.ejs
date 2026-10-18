@@ -1,0 +1,41 @@
+<%- include('partials/topo') %>
+<% const [ano, m] = mes.split('-');
+   const nomeMes = new Date(Number(ano), Number(m) - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }); %>
+<div class="acoes" style="margin-bottom:16px">
+  <a href="/vendas/nova" class="botao">+ Venda</a>
+  <a href="/producao" class="botao secundario">+ Produção</a>
+</div>
+
+<h2 style="margin-top:0">Resumo de <%= nomeMes %></h2>
+<div class="numeros">
+  <div class="numero"><div class="rotulo">Vendido no mês</div><div class="valor"><%= u.dinheiro(numeros.vendido_mes) %></div></div>
+  <div class="numero"><div class="rotulo">Vendas no mês</div><div class="valor"><%= numeros.vendas_mes %></div></div>
+  <div class="numero"><div class="rotulo">Recebido no mês</div><div class="valor"><%= u.dinheiro(numeros.recebido_mes) %></div></div>
+  <div class="numero <%= numeros.a_receber > 0 ? 'alerta' : '' %>"><div class="rotulo">A receber (total)</div><div class="valor"><%= u.dinheiro(numeros.a_receber) %></div></div>
+</div>
+
+<h2>Estoque</h2>
+<% if (!estoque.length) { %><p class="vazio">Nenhum produto ativo. <a href="/produtos/novo">Cadastrar produto</a></p><% } %>
+<ul class="lista">
+  <% for (const p of estoque) { %>
+    <li>
+      <div class="bloco"><div class="titulo"><%= p.nome %></div></div>
+      <div class="valor" style="<%= p.estoque < 0 ? 'color:var(--alerta)' : '' %>"><%= u.numero(p.estoque) %> <%= p.unidade %></div>
+    </li>
+  <% } %>
+</ul>
+
+<h2>Quem está devendo</h2>
+<% if (!devedores.length) { %><p class="vazio">Ninguém devendo. 🎉</p><% } %>
+<ul class="lista">
+  <% for (const d of devedores) { %>
+    <li>
+      <a class="bloco" href="/clientes/<%= d.id %>">
+        <div class="titulo"><%= d.nome %></div>
+        <div class="sutil">desde <%= u.data(d.desde) %></div>
+      </a>
+      <div class="valor"><%= u.dinheiro(d.total) %></div>
+    </li>
+  <% } %>
+</ul>
+<%- include('partials/rodape') %>

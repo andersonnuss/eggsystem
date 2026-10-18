@@ -1,0 +1,22 @@
+<%- include('../partials/topo') %>
+<div class="cabecalho">
+  <h1>Vendas</h1>
+  <a href="/vendas/nova" class="botao">+ Nova</a>
+</div>
+<div class="filtros">
+  <a href="/vendas" class="<%= filtro === 'todas' ? 'ativo' : '' %>">Todas</a>
+  <a href="/vendas?filtro=pendentes" class="<%= filtro === 'pendentes' ? 'ativo' : '' %>">A receber</a>
+</div>
+<% if (!vendas.length) { %><p class="vazio">Nenhuma venda <%= filtro === 'pendentes' ? 'pendente' : 'registrada' %>.</p><% } %>
+<ul class="lista">
+  <% for (const v of vendas) { %>
+    <li>
+      <a class="bloco" href="/vendas/<%= v.id %>">
+        <div class="titulo"><%= v.cliente %></div>
+        <div class="sutil"><%= u.data(v.data) %> · <span class="selo <%= v.pago ? 'pago' : 'pendente' %>"><%= v.pago ? 'pago' : 'a receber' %></span></div>
+      </a>
+      <div class="valor"><%= u.dinheiro(v.total_centavos) %></div>
+    </li>
+  <% } %>
+</ul>
+<%- include('../partials/rodape') %>

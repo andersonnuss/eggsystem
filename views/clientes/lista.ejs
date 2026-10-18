@@ -1,0 +1,22 @@
+<%- include('../partials/topo') %>
+<div class="cabecalho">
+  <h1>Clientes</h1>
+  <a href="/clientes/novo" class="botao">+ Novo</a>
+</div>
+<% if (!clientes.length) { %>
+  <p class="vazio">Nenhum cliente cadastrado.</p>
+<% } %>
+<ul class="lista">
+  <% for (const c of clientes) { %>
+    <li class="<%= c.ativo ? '' : 'inativo' %>">
+      <a class="bloco" href="/clientes/<%= c.id %>">
+        <div class="titulo"><%= c.nome %><%= c.ativo ? '' : ' (inativo)' %></div>
+        <div class="sutil"><%= c.telefone || 'sem telefone' %></div>
+      </a>
+      <% if (c.a_receber > 0) { %>
+        <div class="valor"><span class="selo pendente">deve <%= u.dinheiro(c.a_receber) %></span></div>
+      <% } %>
+    </li>
+  <% } %>
+</ul>
+<%- include('../partials/rodape') %>

@@ -1,0 +1,53 @@
+<%- include('../partials/topo') %>
+<h1>Produção</h1>
+<div class="cartao">
+  <% if (erro) { %><div class="erro"><%= erro %></div><% } %>
+  <% if (!produtos.length) { %>
+    <p>Cadastre um produto primeiro. <a href="/produtos/novo">Novo produto</a></p>
+  <% } else { %>
+  <form method="post" action="/producao" class="formulario">
+    <div class="linha">
+      <label>Tipo
+        <select name="tipo">
+          <option value="producao" <%= form.tipo === 'producao' ? 'selected' : '' %>>Produção</option>
+          <option value="perda" <%= form.tipo === 'perda' ? 'selected' : '' %>>Perda/consumo</option>
+        </select>
+      </label>
+      <label>Data <input type="date" name="data" value="<%= form.data %>" required></label>
+    </div>
+    <div class="linha">
+      <label>Produto
+        <select name="produto_id" required>
+          <option value="">Escolha…</option>
+          <% for (const p of produtos) { %>
+            <option value="<%= p.id %>" <%= p.id === form.produto_id ? 'selected' : '' %>><%= p.nome %> (<%= p.unidade %>)</option>
+          <% } %>
+        </select>
+      </label>
+      <label>Quantidade <input name="quantidade" inputmode="decimal" value="<%= form.quantidade %>" required autofocus></label>
+    </div>
+    <label>Observação <input name="observacao" value="<%= form.observacao || '' %>" placeholder="opcional"></label>
+    <button class="botao">Registrar</button>
+  </form>
+  <% } %>
+</div>
+
+<h2>Últimos registros</h2>
+<% if (!registros.length) { %><p class="vazio">Nenhum registro ainda.</p><% } %>
+<ul class="lista">
+  <% for (const r of registros) { %>
+    <li>
+      <div class="bloco">
+        <div class="titulo"><%= r.produto %></div>
+        <div class="sutil"><%= u.data(r.data) %><%= r.observacao ? ' · ' + r.observacao : '' %></div>
+      </div>
+      <div class="valor">
+        <div><%= r.tipo === 'perda' ? '−' : '+' %><%= u.numero(r.quantidade) %> <%= r.unidade %></div>
+        <form method="post" action="/producao/<%= r.id %>/excluir" class="inline" onsubmit="return confirm('Excluir este registro?')">
+          <button class="link sutil">excluir</button>
+        </form>
+      </div>
+    </li>
+  <% } %>
+</ul>
+<%- include('../partials/rodape') %>

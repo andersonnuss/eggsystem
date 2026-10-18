@@ -1,0 +1,19 @@
+<%- include('../partials/topo') %>
+<h1><%= titulo %></h1>
+<div class="cartao">
+  <% if (erro) { %><div class="erro"><%= erro %></div><% } %>
+  <form method="post" action="/clientes<%= cliente.id ? '/' + cliente.id : '' %>" class="formulario">
+    <label>Nome <input name="nome" value="<%= cliente.nome %>" required></label>
+    <label>Telefone / WhatsApp <input name="telefone" type="tel" inputmode="tel" value="<%= cliente.telefone || '' %>" placeholder="(11) 98765-4321"></label>
+    <label>Endereço <input name="endereco" value="<%= cliente.endereco || '' %>"></label>
+    <label>Observações <textarea name="observacoes"><%= cliente.observacoes || '' %></textarea></label>
+    <% if (cliente.id) { %>
+      <label class="check"><input type="checkbox" name="ativo" value="1" <%= cliente.ativo ? 'checked' : '' %>> Ativo</label>
+    <% } %>
+    <div class="acoes">
+      <button class="botao">Salvar</button>
+      <a href="<%= cliente.id ? '/clientes/' + cliente.id : '/clientes' %>" class="botao secundario">Cancelar</a>
+    </div>
+  </form>
+</div>
+<%- include('../partials/rodape') %>

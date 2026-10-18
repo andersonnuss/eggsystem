@@ -1,0 +1,47 @@
+<%- include('../partials/topo') %>
+<div class="cabecalho">
+  <h1><%= cliente.nome %></h1>
+  <a href="/clientes/<%= cliente.id %>/editar" class="botao secundario pequeno">Editar</a>
+</div>
+
+<div class="cartao">
+  <% const wa = u.linkWhatsApp(cliente.telefone); %>
+  <% if (cliente.telefone) { %>
+    <div>📞 <a href="tel:<%= cliente.telefone %>"><%= cliente.telefone %></a>
+      <% if (wa) { %> · <a href="<%= wa %>" target="_blank" rel="noopener">WhatsApp</a><% } %>
+    </div>
+  <% } %>
+  <% if (cliente.endereco) { %><div>📍 <%= cliente.endereco %></div><% } %>
+  <% if (cliente.observacoes) { %><div class="sutil"><%= cliente.observacoes %></div><% } %>
+  <% if (!cliente.telefone && !cliente.endereco && !cliente.observacoes) { %><div class="sutil">Sem dados de contato.</div><% } %>
+</div>
+
+<div class="numeros">
+  <div class="numero"><div class="rotulo">Total comprado</div><div class="valor"><%= u.dinheiro(resumo.total) %></div></div>
+  <div class="numero <%= resumo.a_receber > 0 ? 'alerta' : '' %>"><div class="rotulo">A receber</div><div class="valor"><%= u.dinheiro(resumo.a_receber) %></div></div>
+</div>
+
+<div class="acoes" style="margin-top:12px">
+  <a href="/vendas/nova?cliente=<%= cliente.id %>" class="botao">+ Nova venda</a>
+  <% if (resumo.a_receber > 0) { %>
+    <form method="post" action="/clientes/<%= cliente.id %>/quitar" class="inline"
+          onsubmit="return confirm('Marcar todas as vendas pendentes como pagas?')">
+      <button class="botao secundario">Quitar tudo</button>
+    </form>
+  <% } %>
+</div>
+
+<h2>Compras</h2>
+<% if (!vendas.length) { %><p class="vazio">Nenhuma compra ainda.</p><% } %>
+<ul class="lista">
+  <% for (const v of vendas) { %>
+    <li>
+      <a class="bloco" href="/vendas/<%= v.id %>">
+        <div class="titulo"><%= u.data(v.data) %></div>
+        <div><span class="selo <%= v.pago ? 'pago' : 'pendente' %>"><%= v.pago ? 'pago' : 'a receber' %></span></div>
+      </a>
+      <div class="valor"><%= u.dinheiro(v.total_centavos) %></div>
+    </li>
+  <% } %>
+</ul>
+<%- include('../partials/rodape') %>

@@ -1,0 +1,11 @@
+<%- include('partials/topo') %>
+<div class="cartao estreito">
+  <h1>Entrar</h1>
+  <% if (erro) { %><div class="erro"><%= erro %></div><% } %>
+  <form method="post" action="/login" class="formulario">
+    <label>Usuário <input name="usuario" value="<%= usuario %>" autocomplete="username" autocapitalize="none" required autofocus></label>
+    <label>Senha <input name="senha" type="password" autocomplete="current-password" required></label>
+    <button class="botao">Entrar</button>
+  </form>
+</div>
+<%- include('partials/rodape') %>
