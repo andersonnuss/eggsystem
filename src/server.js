@@ -5,6 +5,7 @@ const cookieSession = require('cookie-session');
 require('./db');
 const util = require('./util');
 const auth = require('./auth');
+const google = require('./google');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -43,6 +44,7 @@ app.use((req, res, next) => {
   res.locals.caminho = req.path;
   res.locals.usuarioNome = req.session.usuarioNome;
   res.locals.aviso = req.session.aviso;
+  res.locals.googleAtivo = google.configurado();
   delete req.session.aviso;
   next();
 });

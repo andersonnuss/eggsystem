@@ -11,6 +11,7 @@ Sistema web simples para gerenciar o que o sítio produz e vende para conhecidos
 - **Alexa**: lançamento de produção e perdas por voz ("Alexa, diga ao meu sítio que hoje a produção foi de 30 ovos")
 - **Histórico**: log de tudo que foi cadastrado, alterado ou excluído (produtos, clientes, produção, vendas, usuários) e dos acessos, com o que mudou e quem fez; dá para filtrar por pessoa
 - **Usuários**: vários usuários, todos com os mesmos acessos (o cadastro serve para saber quem fez cada coisa). Usuário desativado não entra e é desconectado na hora; cada um pode trocar a própria senha
+- **Entrar com Google**: quem tem no cadastro o e-mail de uma conta Google (ex.: @gmail.com) pode entrar sem digitar senha
 
 Feito para usar no navegador do celular. Stack: Node.js 22.13+ (usa o SQLite embutido, `node:sqlite`), Express e EJS. Não precisa de servidor de banco de dados: tudo fica em um único arquivo `.db`.
 
@@ -33,6 +34,7 @@ src/
   auth.js         # primeiro acesso, login e logout
   consultas.js    # consultas compartilhadas (estoque etc.)
   historico.js    # registro do log de alterações
+  google.js       # "Entrar com Google" (OAuth 2.0 / OpenID Connect)
   producao.js     # lançar/excluir produção (usado pela tela e pela Alexa)
   alexa/          # endpoint da skill, verificação de assinatura, interpretação e modelo de voz
   util.js         # formatação de dinheiro/datas
@@ -90,6 +92,27 @@ Para mudar o banco, acrescente uma nova entrada no array `migrations` em `src/db
    ```
 
    Com HTTPS ativo, defina `COOKIE_SECURE=true` no `.env`.
+
+## Entrar com Google
+
+Usuários com o e-mail de uma conta Google no cadastro (Gmail, ou um domínio próprio no Google Workspace) podem usar o botão **Entrar com Google**. O sistema só aceita contas cujo e-mail verificado pelo Google é igual ao cadastrado num usuário **ativo**; ninguém consegue criar acesso sozinho. A senha continua funcionando.
+
+Para ativar (precisa do endereço HTTPS público já funcionando):
+
+1. Em https://console.cloud.google.com crie um projeto (ex.: "Eggsystem").
+2. *APIs e serviços → Tela de permissão OAuth* (ou *Google Auth Platform*): tipo **Externo**, nome do app, seu e-mail de suporte. Em *Público-alvo*, deixe em **Teste** e adicione os e-mails Gmail de quem vai usar como **usuários de teste** (até 100; não precisa de verificação do Google). Escopos: só `openid`, `email` e `profile`.
+3. *Credenciais → Criar credenciais → ID do cliente OAuth*, tipo **Aplicativo da Web**:
+   - *Origens JavaScript autorizadas*: `https://eggsystem.nusscorp.com.br`
+   - *URIs de redirecionamento autorizados*: `https://eggsystem.nusscorp.com.br/auth/google/retorno`
+4. Copie o ID e a chave secreta para o `.env`:
+   ```
+   PUBLIC_URL=https://eggsystem.nusscorp.com.br
+   GOOGLE_CLIENT_ID=....apps.googleusercontent.com
+   GOOGLE_CLIENT_SECRET=...
+   ```
+5. Reinicie o serviço. O botão aparece na tela de login.
+
+O fluxo usa OAuth 2.0 / OpenID Connect com PKCE, `state` e `nonce`, sem bibliotecas extras. Os logins com Google (e as tentativas recusadas) ficam no Histórico.
 
 ## Alexa (registro por voz)
 

@@ -9,7 +9,7 @@
     <li class="<%= x.ativo ? '' : 'inativo' %>">
       <a class="bloco" href="/usuarios/<%= x.id %>">
         <div class="titulo"><%= x.nome || x.usuario %><%= x.id === usuarioAtual.id ? ' (você)' : '' %><%= x.ativo ? '' : ' (inativo)' %></div>
-        <div class="sutil">login: <%= x.usuario %> · <%= x.ultima_atividade ? 'última atividade ' + u.data(x.ultima_atividade) + ' ' + x.ultima_atividade.slice(11, 16) : 'sem atividade' %></div>
+        <div class="sutil">login: <%= x.usuario %><%= x.email ? ' · ' + x.email : '' %> ·<%= x.ultima_atividade ? 'última atividade ' + u.data(x.ultima_atividade) + ' ' + x.ultima_atividade.slice(11, 16) : 'sem atividade' %></div>
       </a>
     </li>
   <% } %>

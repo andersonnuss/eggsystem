@@ -102,6 +102,11 @@ const migrations = [
   ALTER TABLE usuarios ADD COLUMN criado_em TEXT;
   UPDATE usuarios SET criado_em = datetime('now');
   `,
+  `
+  -- E-mail (minúsculo, opcional, único); usado também para entrar com a conta Google
+  ALTER TABLE usuarios ADD COLUMN email TEXT;
+  CREATE UNIQUE INDEX idx_usuarios_email ON usuarios(email) WHERE email IS NOT NULL;
+  `,
 ];
 
 function migrate() {

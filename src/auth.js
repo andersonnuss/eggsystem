@@ -2,6 +2,7 @@ const crypto = require('node:crypto');
 const express = require('express');
 const { db } = require('./db');
 const historico = require('./historico');
+const google = require('./google');
 
 function hashSenha(senha) {
   const salt = crypto.randomBytes(16);
@@ -26,6 +27,14 @@ function erroUsuario(usuario) {
     return 'Já existe um usuário com esse login.';
   }
   return null;
+}
+
+// E-mail opcional (já em minúsculas); não pode repetir entre usuários
+function erroEmail(email, idAtual = null) {
+  if (!email) return null;
+  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'E-mail inválido.';
+  const dono = db.prepare('SELECT usuario FROM usuarios WHERE email = ? AND id IS NOT ?').get(email, idAtual);
+  return dono ? `Este e-mail já está cadastrado para o usuário ${dono.usuario}.` : null;
 }
 
 function erroSenha(senha, confirmacao) {
@@ -54,6 +63,7 @@ const router = express.Router();
 
 router.get('/login', (req, res) => {
   if (!existeUsuario()) return res.redirect('/configurar');
+  if (req.session.usuarioId) return res.redirect('/'); // já logado (o painel confere se segue ativo)
   res.render('login', { titulo: 'Entrar', erro: null, usuario: '' });
 });
 
@@ -69,10 +79,48 @@ router.post('/login', (req, res) => {
     const erro = senhaOk ? 'Este usuário está desativado.' : 'Usuário ou senha inválidos.';
     return res.status(401).render('login', { titulo: 'Entrar', erro, usuario });
   }
+  entrar(req, res, row, 'senha');
+});
+
+function entrar(req, res, row, via) {
   req.session.usuarioId = row.id;
   req.session.usuarioNome = row.usuario;
-  historico.registrar(req, { entidade: 'acesso', id: row.id, acao: 'entrou', resumo: `Entrou no sistema (IP ${req.ip})` });
+  historico.registrar(req, {
+    entidade: 'acesso', id: row.id, acao: 'entrou',
+    resumo: `Entrou no sistema${via === 'google' ? ' com a conta Google' : ''} (IP ${req.ip})`,
+  });
   res.redirect('/');
+}
+
+// Entrar com Google: só para usuários ativos cujo e-mail cadastrado é o da conta Google
+router.get('/auth/google', (req, res, next) => {
+  if (!google.configurado()) return next();
+  res.redirect(google.iniciar(req));
+});
+
+router.get('/auth/google/retorno', async (req, res, next) => {
+  if (!google.configurado()) return next();
+  const falhar = (erro, resumo) => {
+    historico.registrar(req, { entidade: 'acesso', acao: 'falhou', resumo: `${resumo} (IP ${req.ip})` });
+    res.status(401).render('login', { titulo: 'Entrar', erro, usuario: '' });
+  };
+
+  let conta;
+  try {
+    conta = await google.concluir(req);
+  } catch (err) {
+    if (err instanceof google.ErroGoogle) return falhar(err.message, `Login com Google sem sucesso: ${err.message}`);
+    throw err;
+  }
+  const row = db.prepare('SELECT * FROM usuarios WHERE email = ?').get(conta.email);
+  if (!row) {
+    return falhar(
+      `A conta Google ${conta.email} não está cadastrada. Peça para incluírem esse e-mail no seu usuário.`,
+      `Login com Google de e-mail não cadastrado (${conta.email})`
+    );
+  }
+  if (!row.ativo) return falhar('Este usuário está desativado.', `Login com Google de usuário inativo (${row.usuario})`);
+  entrar(req, res, row, 'google');
 });
 
 router.post('/sair', (req, res) => {
@@ -109,4 +157,4 @@ router.post('/configurar', (req, res) => {
   res.redirect('/');
 });
 
-module.exports = { router, exigirLogin, hashSenha, verificarSenha, erroUsuario, erroSenha };
+module.exports = { router, exigirLogin, hashSenha, verificarSenha, erroUsuario, erroEmail, erroSenha };

@@ -7,6 +7,13 @@
   <% if (erro) { %><div class="erro"><%= erro %></div><% } %>
   <form method="post" action="/usuarios<%= usuario.id ? '/' + usuario.id : '' %>" class="formulario" autocomplete="off">
     <label>Nome <input name="nome" value="<%= usuario.nome || '' %>" required autofocus></label>
+    <label><span>E-mail <span class="sutil">(opcional)</span></span>
+      <input name="email" type="email" inputmode="email" autocapitalize="none" value="<%= usuario.email || '' %>" placeholder="ex.: maria@gmail.com">
+    </label>
+    <p class="sutil" style="margin:-4px 0 0">
+      Com um e-mail de conta Google (como @gmail.com), a pessoa pode usar
+      <strong>Entrar com Google</strong> na tela de login<%= googleAtivo ? '' : ', assim que essa opção for configurada no servidor' %>.
+    </p>
     <% if (usuario.id) { %>
       <label>Usuário (login) <input value="<%= usuario.usuario %>" disabled></label>
       <p class="sutil" style="margin:-4px 0 0">Cadastrado em <%= u.data(usuario.cadastro) %>. O login não pode ser alterado.</p>

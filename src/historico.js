@@ -25,6 +25,7 @@ const CAMPOS = {
   usuario: {
     usuario: ['Login', texto],
     nome: ['Nome', texto],
+    email: ['E-mail', texto],
     ativo: ['Ativo', simNao],
   },
   producao: {

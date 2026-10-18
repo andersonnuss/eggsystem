@@ -169,4 +169,13 @@ form.inline { display: inline; }
 .selo.acao-criou, .selo.acao-entrou { background: var(--ok-fundo); color: var(--ok); }
 .selo.acao-excluiu, .selo.acao-falhou { background: var(--alerta-fundo); color: var(--alerta); }
 
+.separador { display: flex; align-items: center; gap: 10px; color: var(--sutil); font-size: .85rem; margin: 16px 0; }
+.separador::before, .separador::after { content: ""; flex: 1; border-top: 1px solid var(--borda); }
+.botao-google {
+  display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 44px;
+  border: 1px solid #747775; border-radius: 8px; background: #fff; color: #1f1f1f;
+  font: 500 1rem system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; text-decoration: none;
+}
+.botao-google:hover { background: #f5f5f5; }
+
 .vazio { text-align: center; color: var(--sutil); padding: 24px 0; }

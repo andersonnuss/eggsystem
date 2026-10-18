@@ -1,13 +1,20 @@
 // Cadastro de usuários. Todos têm os mesmos acessos; serve para saber quem fez o quê no histórico.
 const express = require('express');
 const { db, transaction } = require('../db');
-const { hashSenha, verificarSenha, erroUsuario, erroSenha } = require('../auth');
+const { hashSenha, verificarSenha, erroUsuario, erroEmail, erroSenha } = require('../auth');
 const historico = require('../historico');
+const google = require('../google');
 
 const router = express.Router();
 
+const lerEmail = (body) => String(body.email || '').trim().toLowerCase() || null;
+
 function buscar(id) {
-  return db.prepare("SELECT id, usuario, nome, ativo, date(criado_em, 'localtime') AS cadastro FROM usuarios WHERE id = ?").get(id);
+  return db.prepare("SELECT id, usuario, nome, email, ativo, date(criado_em, 'localtime') AS cadastro FROM usuarios WHERE id = ?").get(id);
+}
+
+function renderForm(res, titulo, usuario, erro, status = 200) {
+  res.status(status).render('usuarios/form', { titulo, usuario, erro, googleAtivo: google.configurado() });
 }
 
 function ativos() {
@@ -16,7 +23,7 @@ function ativos() {
 
 router.get('/', (req, res) => {
   const usuarios = db.prepare(`
-    SELECT u.id, u.usuario, u.nome, u.ativo,
+    SELECT u.id, u.usuario, u.nome, u.email, u.ativo,
       (SELECT datetime(MAX(criado_em), 'localtime') FROM historico WHERE usuario = u.usuario) AS ultima_atividade
     FROM usuarios u
     ORDER BY u.ativo DESC, COALESCE(u.nome, u.usuario)
@@ -25,19 +32,24 @@ router.get('/', (req, res) => {
 });
 
 router.get('/novo', (req, res) => {
-  res.render('usuarios/form', { titulo: 'Novo usuário', usuario: { usuario: '', nome: '' }, erro: null });
+  renderForm(res, 'Novo usuário', { usuario: '', nome: '', email: '' }, null);
 });
 
 router.post('/', (req, res) => {
-  const usuario = { usuario: String(req.body.usuario || '').trim().toLowerCase(), nome: String(req.body.nome || '').trim() };
+  const usuario = {
+    usuario: String(req.body.usuario || '').trim().toLowerCase(),
+    nome: String(req.body.nome || '').trim(),
+    email: lerEmail(req.body),
+  };
   const senha = String(req.body.senha || '');
-  const erro = (!usuario.nome && 'Informe o nome.') || erroUsuario(usuario.usuario) || erroSenha(senha, req.body.confirmacao);
-  if (erro) return res.status(400).render('usuarios/form', { titulo: 'Novo usuário', usuario, erro });
+  const erro = (!usuario.nome && 'Informe o nome.') || erroUsuario(usuario.usuario)
+    || erroEmail(usuario.email) || erroSenha(senha, req.body.confirmacao);
+  if (erro) return renderForm(res, 'Novo usuário', usuario, erro, 400);
 
   transaction(() => {
     const { lastInsertRowid } = db
-      .prepare("INSERT INTO usuarios (usuario, nome, senha_hash, criado_em) VALUES (?, ?, ?, datetime('now'))")
-      .run(usuario.usuario, usuario.nome, hashSenha(senha));
+      .prepare("INSERT INTO usuarios (usuario, nome, email, senha_hash, criado_em) VALUES (?, ?, ?, ?, datetime('now'))")
+      .run(usuario.usuario, usuario.nome, usuario.email, hashSenha(senha));
     historico.registrar(req, {
       entidade: 'usuario', id: lastInsertRowid, acao: 'criou',
       resumo: `Cadastrou o usuário ${usuario.usuario} (${usuario.nome})`,
@@ -72,13 +84,13 @@ router.post('/minha-senha', (req, res) => {
 router.get('/:id', (req, res, next) => {
   const usuario = buscar(req.params.id);
   if (!usuario) return next();
-  res.render('usuarios/form', { titulo: 'Editar usuário', usuario, erro: null });
+  renderForm(res, 'Editar usuário', usuario, null);
 });
 
 router.post('/:id', (req, res, next) => {
   const atual = buscar(req.params.id);
   if (!atual) return next();
-  const usuario = { ...atual, nome: String(req.body.nome || '').trim(), ativo: req.body.ativo ? 1 : 0 };
+  const usuario = { ...atual, nome: String(req.body.nome || '').trim(), email: lerEmail(req.body), ativo: req.body.ativo ? 1 : 0 };
   const senha = String(req.body.senha || '');
   const eu = atual.id === req.session.usuarioId;
 
@@ -86,11 +98,11 @@ router.post('/:id', (req, res, next) => {
   if (!usuario.nome) erro = 'Informe o nome.';
   else if (!usuario.ativo && eu) erro = 'Você não pode desativar o seu próprio usuário.';
   else if (!usuario.ativo && atual.ativo && ativos() <= 1) erro = 'Precisa existir ao menos um usuário ativo.';
-  else if (senha) erro = erroSenha(senha, req.body.confirmacao);
-  if (erro) return res.status(400).render('usuarios/form', { titulo: 'Editar usuário', usuario, erro });
+  else erro = erroEmail(usuario.email, atual.id) || (senha ? erroSenha(senha, req.body.confirmacao) : null);
+  if (erro) return renderForm(res, 'Editar usuário', usuario, erro, 400);
 
   transaction(() => {
-    db.prepare('UPDATE usuarios SET nome = ?, ativo = ? WHERE id = ?').run(usuario.nome, usuario.ativo, atual.id);
+    db.prepare('UPDATE usuarios SET nome = ?, email = ?, ativo = ? WHERE id = ?').run(usuario.nome, usuario.email, usuario.ativo, atual.id);
     if (senha) db.prepare('UPDATE usuarios SET senha_hash = ? WHERE id = ?').run(hashSenha(senha), atual.id);
     const detalhes = historico.mudancas('usuario', atual, usuario) || {};
     if (senha) detalhes.Senha = { de: '••••', para: 'redefinida' };
