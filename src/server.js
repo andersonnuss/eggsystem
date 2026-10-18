@@ -23,6 +23,8 @@ app.disable('x-powered-by');
 app.locals.versao = Date.now().toString(36);
 
 app.use(express.static(path.join(__dirname, '..', 'public'), { maxAge: '1d' }));
+// A Alexa autentica por assinatura (não por login), por isso fica antes da sessão
+app.use('/alexa', require('./alexa'));
 app.use(express.urlencoded({ extended: true }));
 app.use(
   cookieSession({
@@ -53,6 +55,7 @@ app.use('/clientes', require('./routes/clientes'));
 app.use('/producao', require('./routes/producao'));
 app.use('/vendas', require('./routes/vendas'));
 app.use('/historico', require('./routes/historico'));
+app.use('/integracoes', require('./routes/integracoes'));
 
 app.use((req, res) => {
   res.status(404).render('erro', { titulo: 'Não encontrado', mensagem: 'Página não encontrada.' });

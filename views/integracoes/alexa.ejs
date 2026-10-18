@@ -1,0 +1,45 @@
+<%- include('../partials/topo') %>
+<h1>Integração com Alexa</h1>
+
+<div class="cartao">
+  <% if (configurada) { %>
+    <div class="aviso" style="margin:0">✅ Endpoint ativo (ALEXA_SKILL_ID configurado).</div>
+  <% } else { %>
+    <div class="erro" style="margin:0">Endpoint desligado: defina <code>ALEXA_SKILL_ID</code> no <code>.env</code> do servidor e reinicie.</div>
+  <% } %>
+  <% if (semVerificacao) { %>
+    <div class="erro" style="margin:8px 0 0"><strong>ALEXA_SEM_VERIFICACAO=true</strong>: a assinatura da Amazon não está sendo conferida. Use só para testes.</div>
+  <% } %>
+</div>
+
+<h2>Como falar</h2>
+<div class="cartao">
+  <p style="margin-top:0">Toda frase precisa do nome de invocação <strong>"<%= invocacao %>"</strong>:</p>
+  <ul>
+    <li>“Alexa, diga ao <%= invocacao %> que hoje a produção foi de 30 ovos”</li>
+    <li>“Alexa, diga ao <%= invocacao %> que tive 10 quilos de aipim”</li>
+    <li>“Alexa, diga ao <%= invocacao %> que perdi 3 ovos”</li>
+    <li>“Alexa, diga ao <%= invocacao %> para desfazer” <span class="sutil">(remove o último lançamento por voz, até 30 min)</span></li>
+    <li>Ou: “Alexa, abrir <%= invocacao %>” e depois “30 ovos”</li>
+  </ul>
+  <p class="sutil" style="margin-bottom:0">Sem unidade, vale a unidade de produção do produto. Falando a unidade de venda (ex.: “2 dúzias de ovos”), o sistema converte. A Alexa só entende números inteiros.</p>
+</div>
+
+<h2>Configurar a skill</h2>
+<div class="cartao">
+  <ol style="margin-top:0;padding-left:20px">
+    <li>Em <a href="https://developer.amazon.com/alexa/console/ask" target="_blank" rel="noopener">developer.amazon.com/alexa/console/ask</a>, com a mesma conta Amazon da sua Echo, crie uma skill <strong>Custom</strong>, idioma <strong>Portuguese (BR)</strong>, hospedagem <strong>Provision your own</strong>.</li>
+    <li>Em <em>Interaction Model → JSON Editor</em>, cole o JSON abaixo e clique em <em>Save</em> e <em>Build</em>.</li>
+    <li>Em <em>Endpoint</em>, escolha <strong>HTTPS</strong> e informe a URL pública do sistema terminando em <code>/alexa</code> (aqui: <code><%= endpoint %></code>). Certificado: “from a trusted certificate authority”.</li>
+    <li>Copie o <strong>Skill ID</strong> (amzn1.ask.skill…) para o <code>ALEXA_SKILL_ID</code> do <code>.env</code> e reinicie o serviço.</li>
+    <li>Na aba <em>Test</em>, ative <strong>Development</strong>. A skill já funciona nas Echos da sua conta, sem publicar.</li>
+  </ol>
+  <p class="sutil" style="margin-bottom:0">Cadastrou um produto novo? Baixe o JSON de novo e faça o Build, para a Alexa reconhecer o nome.</p>
+</div>
+
+<div class="cabecalho" style="margin-top:20px">
+  <h2 style="margin:0">Modelo de interação (pt-BR)</h2>
+  <a href="/integracoes/alexa/modelo.json" class="botao secundario pequeno">Baixar JSON</a>
+</div>
+<textarea readonly rows="12" style="font-family:monospace;font-size:.8rem" onclick="this.select()"><%= json %></textarea>
+<%- include('../partials/rodape') %>
