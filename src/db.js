@@ -69,6 +69,11 @@ const migrations = [
   CREATE INDEX idx_venda_itens_venda ON venda_itens(venda_id);
   CREATE INDEX idx_venda_itens_produto ON venda_itens(produto_id);
   `,
+  `
+  -- CPF só com dígitos; opcional, mas não pode repetir
+  ALTER TABLE clientes ADD COLUMN cpf TEXT;
+  CREATE UNIQUE INDEX idx_clientes_cpf ON clientes(cpf) WHERE cpf IS NOT NULL;
+  `,
 ];
 
 function migrate() {

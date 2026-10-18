@@ -2,8 +2,15 @@
 <h1><%= titulo %></h1>
 <div class="cartao">
   <% if (erro) { %><div class="erro"><%= erro %></div><% } %>
-  <form method="post" action="/clientes<%= cliente.id ? '/' + cliente.id : '' %>" class="formulario">
-    <label>Nome <input name="nome" value="<%= cliente.nome %>" required></label>
+  <form method="post" action="/clientes<%= cliente.id ? '/' + cliente.id : '' %>" class="formulario" id="form-cliente">
+    <label>Nome <input name="nome" id="nome" value="<%= cliente.nome %>" required autocomplete="off"></label>
+    <div id="parecidos" class="parecidos" hidden>
+      <div class="sutil">Já existe(m) cliente(s) com nome parecido:</div>
+      <ul></ul>
+    </div>
+    <label>CPF <span class="sutil">(opcional, usado na nota fiscal de produtor)</span>
+      <input name="cpf" id="cpf" inputmode="numeric" value="<%= u.cpf(cliente.cpf) %>" placeholder="000.000.000-00" maxlength="14" autocomplete="off">
+    </label>
     <label>Telefone / WhatsApp <input name="telefone" type="tel" inputmode="tel" value="<%= cliente.telefone || '' %>" placeholder="(11) 98765-4321"></label>
     <label>Endereço <input name="endereco" value="<%= cliente.endereco || '' %>"></label>
     <label>Observações <textarea name="observacoes"><%= cliente.observacoes || '' %></textarea></label>
@@ -16,4 +23,61 @@
     </div>
   </form>
 </div>
+
+<script>
+  (function () {
+    const idAtual = <%= cliente.id || 'null' %>;
+    const nome = document.getElementById('nome');
+    const caixa = document.getElementById('parecidos');
+    const lista = caixa.querySelector('ul');
+    const fmtCpf = (d) => d.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4');
+    let espera, ultimaBusca = '';
+
+    async function buscar() {
+      const texto = nome.value.trim();
+      if (texto === ultimaBusca) return;
+      ultimaBusca = texto;
+      if (texto.length < 2) { caixa.hidden = true; return; }
+      const params = new URLSearchParams({ nome: texto });
+      if (idAtual) params.set('ignorar', idAtual);
+      try {
+        const resp = await fetch('/clientes/busca?' + params);
+        if (!resp.ok || texto !== nome.value.trim()) return;
+        const clientes = await resp.json();
+        lista.replaceChildren(...clientes.map((c) => {
+          const li = document.createElement('li');
+          const a = document.createElement('a');
+          a.href = '/clientes/' + c.id;
+          a.textContent = c.nome + (c.ativo ? '' : ' (inativo)');
+          li.append(a);
+          const extra = [c.cpf && 'CPF ' + fmtCpf(c.cpf), c.telefone].filter(Boolean).join(' · ');
+          if (extra) {
+            const s = document.createElement('span');
+            s.className = 'sutil';
+            s.textContent = ' ' + extra;
+            li.append(s);
+          }
+          return li;
+        }));
+        caixa.hidden = clientes.length === 0;
+      } catch (_) { /* sem rede: só não mostra sugestões */ }
+    }
+
+    nome.addEventListener('input', () => {
+      clearTimeout(espera);
+      espera = setTimeout(buscar, 250);
+    });
+    if (nome.value.trim()) buscar();
+
+    // Máscara do CPF enquanto digita
+    const cpf = document.getElementById('cpf');
+    cpf.addEventListener('input', () => {
+      const d = cpf.value.replace(/\D/g, '').slice(0, 11);
+      cpf.value = d
+        .replace(/^(\d{3})(\d)/, '$1.$2')
+        .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
+        .replace(/\.(\d{3})(\d{1,2})$/, '.$1-$2');
+    });
+  })();
+</script>
 <%- include('../partials/rodape') %>

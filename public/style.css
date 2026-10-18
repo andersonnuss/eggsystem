@@ -148,4 +148,8 @@ form.inline { display: inline; }
 .filtros a { text-decoration: none; padding: 6px 12px; border: 1px solid var(--borda); border-radius: 99px; color: var(--texto); font-size: .9rem; background: var(--superficie); }
 .filtros a.ativo { background: var(--primaria); color: var(--primaria-texto); border-color: var(--primaria); }
 
+.parecidos { background: var(--alerta-fundo); border-radius: 8px; padding: 8px 12px; margin-top: -4px; }
+.parecidos ul { margin: 4px 0 0; padding-left: 18px; }
+.parecidos li { margin: 2px 0; }
+
 .vazio { text-align: center; color: var(--sutil); padding: 24px 0; }

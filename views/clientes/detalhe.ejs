@@ -12,8 +12,9 @@
     </div>
   <% } %>
   <% if (cliente.endereco) { %><div>📍 <%= cliente.endereco %></div><% } %>
+  <div>🪪 <%= cliente.cpf ? 'CPF ' + u.cpf(cliente.cpf) : 'CPF não informado' %></div>
   <% if (cliente.observacoes) { %><div class="sutil"><%= cliente.observacoes %></div><% } %>
-  <% if (!cliente.telefone && !cliente.endereco && !cliente.observacoes) { %><div class="sutil">Sem dados de contato.</div><% } %>
+  <div class="sutil">Cliente desde <%= u.data(cliente.cadastro) %></div>
 </div>
 
 <div class="numeros">
