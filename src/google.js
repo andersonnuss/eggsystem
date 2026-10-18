@@ -15,10 +15,21 @@ function configurado() {
   return !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
 }
 
+function urlBase(req) {
+  return (process.env.PUBLIC_URL || `${req.protocol}://${req.get('host')}`).replace(/\/+$/, '');
+}
+
 // Precisa ser idêntica à cadastrada no Google Cloud. Em produção defina PUBLIC_URL.
 function urlRetorno(req) {
-  const base = (process.env.PUBLIC_URL || `${req.protocol}://${req.get('host')}`).replace(/\/+$/, '');
-  return `${base}/auth/google/retorno`;
+  return `${urlBase(req)}/auth/google/retorno`;
+}
+
+// O cookie da sessão é do endereço acessado. Se o login começou por outro endereço
+// (ex.: IP local), a volta do Google em PUBLIC_URL não o enxergaria: devolve o endereço certo.
+function enderecoCorreto(req) {
+  if (!process.env.PUBLIC_URL) return null;
+  const publico = new URL(urlBase(req));
+  return req.get('host') === publico.host ? null : `${publico.origin}${req.originalUrl}`;
 }
 
 // Monta a URL do Google e guarda na sessão o que será conferido na volta
@@ -70,7 +81,13 @@ async function concluir(req) {
   const estado = req.session.google;
   delete req.session.google; // uso único
   if (req.query.error) throw new ErroGoogle('Login com Google cancelado.');
-  if (!estado || Date.now() - estado.criado > VALIDADE_MS || !iguais(req.query.state, estado.state)) {
+  const motivo = !estado ? 'sessão sem o estado do login (cookie não foi gravado ou não voltou)'
+    : Date.now() - estado.criado > VALIDADE_MS ? 'estado expirado'
+    : !iguais(req.query.state, estado.state) ? 'state diferente do iniciado'
+    : null;
+  if (motivo) {
+    console.warn(`Google: retorno recusado: ${motivo}. Host=${req.get('host')}, protocolo=${req.protocol}, ` +
+      `cookie presente=${/(^|;\s*)eggsystem=/.test(req.get('cookie') || '')}`);
     throw new ErroGoogle('O login com Google expirou ou não foi iniciado aqui. Tente de novo.');
   }
   if (!req.query.code) throw new ErroGoogle('Resposta do Google sem código de autorização.');
@@ -101,4 +118,4 @@ async function concluir(req) {
   return validarIdToken(corpo.id_token, estado.nonce);
 }
 
-module.exports = { configurado, iniciar, concluir, urlRetorno, ErroGoogle };
+module.exports = { configurado, iniciar, concluir, urlRetorno, enderecoCorreto, ErroGoogle };

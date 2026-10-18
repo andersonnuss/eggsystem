@@ -90,7 +90,7 @@ Para mudar o banco, acrescente uma nova entrada no array `migrations` em `src/db
    }
    ```
 
-   Com HTTPS ativo, defina `COOKIE_SECURE=true` no `.env`.
+   Deixe `COOKIE_SECURE=auto` (padrão): o cookie de sessão é marcado como seguro quando a requisição chega por HTTPS. Se o proxy (Caddy, `cloudflared`) não roda na mesma máquina (ex.: Docker), inclua o IP/rede dele em `TRUST_PROXY` para o sistema reconhecer o HTTPS e o IP real dos acessos. Se houver problema, o log do serviço avisa.
 
 ## Entrar com Google
 

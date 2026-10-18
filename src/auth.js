@@ -70,7 +70,10 @@ const router = express.Router();
 router.get('/login', (req, res) => {
   if (!existeUsuario()) return res.redirect('/configurar');
   if (req.session.usuarioId) return res.redirect('/'); // já logado (o painel confere se segue ativo)
-  res.render('login', { titulo: 'Entrar', erro: null, usuario: '' });
+  const erro = res.locals.cookieBloqueado
+    ? 'O servidor não está conseguindo gravar o cookie de sessão (configuração de HTTPS/proxy): o login não vai funcionar. Veja o log do serviço.'
+    : null;
+  res.render('login', { titulo: 'Entrar', erro, usuario: '' });
 });
 
 router.post('/login', (req, res) => {
@@ -114,6 +117,14 @@ function entrar(req, res, row, via) {
 // Entrar com Google: só para usuários ativos cujo e-mail cadastrado é o da conta Google
 router.get('/auth/google', (req, res, next) => {
   if (!google.configurado()) return next();
+  const outroEndereco = google.enderecoCorreto(req);
+  if (outroEndereco) return res.redirect(outroEndereco);
+  if (res.locals.cookieBloqueado) {
+    return res.status(500).render('login', {
+      titulo: 'Entrar', usuario: '',
+      erro: 'O servidor não está conseguindo gravar o cookie de sessão (configuração de HTTPS/proxy). Veja o log do serviço.',
+    });
+  }
   res.redirect(google.iniciar(req));
 });
 

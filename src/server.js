@@ -10,6 +10,8 @@ const google = require('./google');
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
+const MODO_COOKIE = ['true', 'false'].includes(process.env.COOKIE_SECURE) ? process.env.COOKIE_SECURE : 'auto';
+
 let secret = process.env.SESSION_SECRET;
 if (!secret) {
   secret = crypto.randomBytes(32).toString('hex');
@@ -18,7 +20,10 @@ if (!secret) {
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, '..', 'views'));
-app.set('trust proxy', 'loopback');
+// Proxies confiáveis (Cloudflare Tunnel, Caddy...): define req.ip e se a conexão original era HTTPS.
+// Padrão: só proxies na própria máquina. Ex.: TRUST_PROXY=loopback, 172.17.0.0/16 (cloudflared em Docker).
+const trustProxy = process.env.TRUST_PROXY || 'loopback';
+app.set('trust proxy', trustProxy === 'true' ? true : /^\d+$/.test(trustProxy) ? Number(trustProxy) : trustProxy);
 app.disable('x-powered-by');
 // Muda a cada reinício: força o navegador a baixar CSS/ícone novos após uma atualização
 app.locals.versao = Date.now().toString(36);
@@ -33,10 +38,31 @@ app.use(
     secret,
     httpOnly: true,
     sameSite: 'lax',
-    secure: process.env.COOKIE_SECURE === 'true',
+    secure: MODO_COOKIE === 'true',
     maxAge: 30 * 24 * 60 * 60 * 1000,
   })
 );
+
+// COOKIE_SECURE=auto (padrão): cookie "Secure" quando a requisição chegou por HTTPS.
+// Com "true" e uma requisição que não parece HTTPS, a biblioteca descarta o cookie em silêncio
+// (login e "Entrar com Google" falham), então avisamos no log.
+let ultimoAviso = 0;
+app.use((req, res, next) => {
+  if (MODO_COOKIE === 'auto') {
+    req.sessionOptions.secure = req.secure;
+  } else if (MODO_COOKIE === 'true' && !req.secure) {
+    res.locals.cookieBloqueado = true;
+    if (Date.now() - ultimoAviso > 10 * 60 * 1000) {
+      ultimoAviso = Date.now();
+      console.warn(
+        `ATENÇÃO: COOKIE_SECURE=true, mas a requisição chegou como HTTP (IP do proxy ${req.socket.remoteAddress}, ` +
+        `X-Forwarded-Proto=${req.get('x-forwarded-proto') || 'ausente'}). O cookie de sessão NÃO será gravado. ` +
+        'Use COOKIE_SECURE=auto ou inclua o IP do proxy em TRUST_PROXY.'
+      );
+    }
+  }
+  next();
+});
 
 // Variáveis disponíveis em todas as views
 app.use((req, res, next) => {
