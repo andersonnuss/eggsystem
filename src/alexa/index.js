@@ -26,12 +26,14 @@ function responder(texto, { fim = true, pergunta = null, cartao = false } = {}) 
 
 const perguntar = (texto) => responder(texto, { fim: false, pergunta: texto });
 
-// Valor do slot, preferindo o valor resolvido pelo modelo (ex.: sinônimo "kg" -> "quilo")
+// Valor do slot, preferindo o valor resolvido pelo modelo (ex.: sinônimo "kg" -> "quilo").
+// Se a Alexa resolveu para mais de um valor, usa o que foi falado e deixa o sistema perguntar.
 function slot(intent, nome) {
   const s = intent.slots?.[nome];
   if (!s) return null;
   const resolvido = s.resolutions?.resolutionsPerAuthority?.find((r) => r.status?.code === 'ER_SUCCESS_MATCH');
-  return resolvido?.values?.[0]?.value?.name || s.value || null;
+  const valores = resolvido?.values || [];
+  return (valores.length === 1 ? valores[0].value?.name : null) || s.value || null;
 }
 
 function lista(nomes, conectivo = 'e') {

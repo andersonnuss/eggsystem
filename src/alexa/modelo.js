@@ -71,21 +71,30 @@ const SLOTS = [
 
 const usaSlot = (amostras) => SLOTS.filter((s) => amostras.some((a) => a.includes(`{${s.name}}`)));
 
-// "Ovos caipira" -> sinônimos "ovos", "ovo", "ovo caipira"
+const singular = (w) => (w.length > 3 && w.endsWith('s') ? w.slice(0, -1) : w);
+
+// "Ovos Caipiras" -> sinônimos "ovos", "ovo", "ovo caipira"
 function sinonimos(nome) {
   const minusculo = nome.toLowerCase();
   const [primeira, ...resto] = minusculo.split(/\s+/);
-  const variacoes = new Set([primeira]);
-  if (primeira.endsWith('s')) variacoes.add(primeira.slice(0, -1));
-  if (resto.length) for (const v of [...variacoes]) variacoes.add([v, ...resto].join(' '));
+  const variacoes = new Set([primeira, singular(primeira)]);
+  if (resto.length) variacoes.add([primeira, ...resto].map(singular).join(' '));
   variacoes.delete(minusculo);
   return [...variacoes];
 }
 
 function gerar() {
   const produtos = produtosAtivos();
+  // Sinônimo que serve para mais de um produto (ex.: "aipim" em "Aipim de Primeira" e "de Segunda")
+  // fica de fora: assim a Alexa repassa o que foi falado e o sistema pergunta qual é.
+  const todos = produtos.map((p) => sinonimos(p.nome));
+  const contagem = new Map();
+  for (const lista of todos) for (const s of lista) contagem.set(s, (contagem.get(s) || 0) + 1);
+  const nomes = new Set(produtos.map((p) => p.nome.toLowerCase()));
   const valoresProduto = produtos.length
-    ? produtos.map((p) => ({ name: { value: p.nome, synonyms: sinonimos(p.nome) } }))
+    ? produtos.map((p, i) => ({
+      name: { value: p.nome, synonyms: todos[i].filter((s) => contagem.get(s) === 1 && !nomes.has(s)) },
+    }))
     : [{ name: { value: 'ovos', synonyms: ['ovo'] } }];
 
   return {

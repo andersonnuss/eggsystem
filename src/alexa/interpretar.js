@@ -35,18 +35,31 @@ function falarQuantidade(qtd, unidade) {
   return `${numero(qtd)} ${nome}`;
 }
 
+// Palavras sem acento e no singular simples ("Ovos Caipiras" -> ovo, caipira)
+function palavras(texto) {
+  return semAcento(texto).replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(Boolean)
+    .map((w) => (w.length > 3 && w.endsWith('s') ? w.slice(0, -1) : w));
+}
+
 // { produto } | { ambiguos: [...] } | { nenhum: true }
+// Ordem de decisão: nome completo falado > palavras exatas > aproximação (prefixo/erro de digitação).
+// Ex.: "mel" fica com "Mel de abelha" (palavra exata), não com "Melado" (só prefixo);
+// "aipim" com "Aipim de Primeira" e "Aipim de Segunda" pergunta qual.
 function encontrarProduto(falado, produtos) {
-  const pontuados = produtos
-    .map((p) => ({ p, pontos: semelhanca(falado, p.nome), cobertura: semelhanca(p.nome, falado) }))
-    .filter((x) => x.pontos >= 1)
-    .sort((a, b) => b.cobertura - a.cobertura);
-  if (!pontuados.length) return { nenhum: true };
-  if (pontuados.length === 1) return { produto: pontuados[0].p };
-  // Vários candidatos: só decide sozinho se um deles bate com o nome inteiro (ex.: "ovos caipira")
-  const exatos = pontuados.filter((x) => x.cobertura === 1);
-  if (exatos.length === 1) return { produto: exatos[0].p };
-  return { ambiguos: (exatos.length ? exatos : pontuados).map((x) => x.p) };
+  const ditas = palavras(falado);
+  const candidatos = produtos.filter((p) => semelhanca(falado, p.nome) >= 1);
+  if (!candidatos.length) return { nenhum: true };
+
+  const completos = candidatos.filter((p) => palavras(p.nome).every((w) => ditas.includes(w)));
+  if (completos.length === 1) return { produto: completos[0] };
+
+  const exatos = candidatos.filter((p) => {
+    const doProduto = palavras(p.nome);
+    return ditas.every((w) => doProduto.includes(w));
+  });
+  if (exatos.length === 1) return { produto: exatos[0] };
+  if (exatos.length > 1) return { ambiguos: exatos };
+  return candidatos.length === 1 ? { produto: candidatos[0] } : { ambiguos: candidatos };
 }
 
 // Quantidade falada -> quantidade na unidade de produção do produto
