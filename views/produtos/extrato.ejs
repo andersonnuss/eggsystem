@@ -1,0 +1,73 @@
+<%- include('../partials/topo') %>
+<div class="cabecalho">
+  <h1><%= produto.nome %></h1>
+  <div class="acoes" style="margin:0">
+    <a href="/historico?entidade=produto&id=<%= produto.id %>" class="botao secundario pequeno">Histórico</a>
+    <a href="/produtos/<%= produto.id %>" class="botao secundario pequeno">Editar</a>
+  </div>
+</div>
+
+<%
+  const sinal = (q) => (q > 0 ? '+' : q < 0 ? '−' : '') + u.numero(Math.abs(q));
+  // Saldo também na unidade de venda quando ela é diferente (ex.: 96 ovo = 8 dúzia)
+  const emVenda = (q) => produto.unidade_producao ? ` (${u.numero(q / produto.fator)} ${produto.unidade})` : '';
+%>
+<div class="numeros">
+  <div class="numero <%= produto.estoque_producao < 0 ? 'alerta' : '' %>">
+    <div class="rotulo">Estoque atual</div>
+    <div class="valor"><%= u.numero(produto.estoque_producao) %> <%= unidade %></div>
+    <% if (produto.unidade_producao) { %><div class="sutil"><%= u.numero(produto.estoque) %> <%= produto.unidade %></div><% } %>
+  </div>
+  <div class="numero">
+    <div class="rotulo">Preço</div>
+    <div class="valor"><%= u.dinheiro(produto.preco_centavos) %></div>
+    <div class="sutil">por <%= produto.unidade %></div>
+  </div>
+</div>
+
+<h2>Contagem de estoque</h2>
+<div class="cartao">
+  <p class="sutil" style="margin-top:0">
+    Contou o que tem de verdade? Informe aqui: o sistema lança um <strong>ajuste</strong> com a diferença
+    em relação ao saldo do fim do dia escolhido (fica no extrato e no histórico).
+  </p>
+  <% if (erro) { %><div class="erro"><%= erro %></div><% } %>
+  <form method="post" action="/produtos/<%= produto.id %>/contagem" class="formulario">
+    <div class="linha">
+      <label><span>Quantidade contada (<%= unidade %>)</span>
+        <input name="contado" inputmode="decimal" value="<%= form.contado %>" required>
+      </label>
+      <label>Data da contagem <input type="date" name="data" value="<%= form.data %>" max="<%= u.hoje() %>" required></label>
+    </div>
+    <% if (produto.unidade_producao) { %>
+      <p class="sutil" style="margin:-4px 0 0">Em <%= unidade %>: 1 <%= produto.unidade %> = <%= u.numero(produto.fator) %> <%= unidade %>.</p>
+    <% } %>
+    <label>Observação <input name="observacao" value="<%= form.observacao || '' %>" placeholder="opcional, ex.: estoque inicial"></label>
+    <button class="botao">Ajustar estoque</button>
+  </form>
+</div>
+
+<h2>Extrato</h2>
+<% if (!movimentos.length) { %><p class="vazio">Nenhum movimento ainda.</p><% } %>
+<ul class="lista extrato">
+  <% for (const m of movimentos) {
+       const titulo = { producao: 'Produção', perda: 'Perda/consumo', ajuste: 'Ajuste por contagem', venda: 'Venda' }[m.tipo]; %>
+    <li>
+      <div class="bloco">
+        <div class="titulo">
+          <% if (m.tipo === 'venda') { %>
+            <a href="/vendas/<%= m.venda_id %>">Venda · <%= m.cliente %></a>
+          <% } else { %>
+            <span class="selo mov-<%= m.tipo %>"><%= titulo %></span>
+          <% } %>
+        </div>
+        <div class="sutil"><%= u.data(m.data) %><%= m.observacao ? ' · ' + m.observacao : '' %></div>
+      </div>
+      <div class="valor">
+        <div class="<%= m.quantidade < 0 ? 'saida' : 'entrada' %>"><%= sinal(m.quantidade) %> <%= unidade %></div>
+        <div class="sutil <%= m.saldo < 0 ? 'negativo' : '' %>">saldo <%= u.numero(m.saldo) %><%= emVenda(m.saldo) %></div>
+      </div>
+    </li>
+  <% } %>
+</ul>
+<%- include('../partials/rodape') %>

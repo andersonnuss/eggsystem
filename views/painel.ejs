@@ -19,7 +19,7 @@
 <ul class="lista">
   <% for (const p of estoque) { %>
     <li>
-      <div class="bloco"><div class="titulo"><%= p.nome %></div></div>
+      <a class="bloco" href="/produtos/<%= p.id %>/extrato"><div class="titulo"><%= p.nome %></div></a>
       <div class="valor" style="<%= p.estoque < 0 ? 'color:var(--alerta)' : '' %>"><%= u.estoque(p) %></div>
     </li>
   <% } %>

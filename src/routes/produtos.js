@@ -1,8 +1,9 @@
 const express = require('express');
 const { db, transaction } = require('../db');
-const { produtosComEstoque } = require('../consultas');
-const { parseDinheiro, parseQuantidade, textoOuNull, numero } = require('../util');
+const { produtosComEstoque, extrato } = require('../consultas');
+const { parseDinheiro, parseQuantidade, textoOuNull, numero, hoje, dataValida, unidadeProducao } = require('../util');
 const historico = require('../historico');
+const producao = require('../producao');
 
 const router = express.Router();
 const UNIDADES = ['un', 'dúzia', 'bandeja', 'kg', 'g', 'litro', 'maço', 'pote', 'pacote'];
@@ -61,6 +62,44 @@ router.post('/', (req, res) => {
   });
   req.session.aviso = `Produto "${produto.nome}" cadastrado.`;
   res.redirect('/produtos');
+});
+
+// Extrato: produção, perdas, vendas e ajustes por data, com o saldo após cada movimento
+function renderExtrato(res, produtoId, form, erro, status = 200) {
+  const produto = produtosComEstoque().find((p) => p.id === Number(produtoId));
+  if (!produto) return false;
+  res.status(status).render('produtos/extrato', {
+    titulo: `Extrato · ${produto.nome}`,
+    produto,
+    unidade: unidadeProducao(produto),
+    movimentos: extrato(produto).reverse(), // mais recentes primeiro
+    form,
+    erro,
+  });
+  return true;
+}
+
+router.get('/:id/extrato', (req, res, next) => {
+  if (!renderExtrato(res, req.params.id, { data: hoje(), contado: '', observacao: '' }, null)) next();
+});
+
+router.post('/:id/contagem', (req, res, next) => {
+  const produto = db.prepare('SELECT * FROM produtos WHERE id = ?').get(req.params.id);
+  if (!produto) return next();
+  const form = { data: req.body.data, contado: req.body.contado, observacao: textoOuNull(req.body.observacao) };
+  const contado = parseQuantidade(form.contado);
+  let erro = null;
+  if (String(form.contado).trim() === '' || !(contado >= 0)) erro = 'Informe a quantidade contada (zero ou mais).';
+  else if (!dataValida(form.data)) erro = 'Data inválida.';
+  else if (form.data > hoje()) erro = 'A contagem não pode ser em data futura.';
+  if (erro) return renderExtrato(res, produto.id, form, erro, 400);
+
+  const un = unidadeProducao(produto);
+  const { diferenca } = producao.contar(req, { produto, data: form.data, contado, observacao: form.observacao });
+  req.session.aviso = diferenca === 0
+    ? `O estoque já conferia: ${numero(contado)} ${un}. Nada foi ajustado.`
+    : `Estoque ajustado para ${numero(contado)} ${un} (${diferenca > 0 ? '+' : ''}${numero(diferenca)} ${un}).`;
+  res.redirect(`/produtos/${produto.id}/extrato`);
 });
 
 router.get('/:id', (req, res, next) => {

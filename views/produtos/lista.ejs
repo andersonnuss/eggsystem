@@ -9,12 +9,12 @@
 <ul class="lista">
   <% for (const p of produtos) { %>
     <li class="<%= p.ativo ? '' : 'inativo' %>">
-      <a class="bloco" href="/produtos/<%= p.id %>">
+      <a class="bloco" href="/produtos/<%= p.id %>/extrato">
         <div class="titulo"><%= p.nome %><%= p.ativo ? '' : ' (inativo)' %></div>
         <div class="sutil"><%= u.dinheiro(p.preco_centavos) %> / <%= p.unidade %><%= p.unidade_producao ? ` · produção em ${p.unidade_producao} (${u.numero(p.fator)} = 1 ${p.unidade})` : '' %></div>
       </a>
       <div class="valor">
-        <div><%= u.numero(p.estoque) %> <%= p.unidade %></div>
+        <div style="<%= p.estoque < 0 ? 'color:var(--alerta)' : '' %>"><%= u.numero(p.estoque) %> <%= p.unidade %></div>
         <div class="sutil"><%= p.unidade_producao ? `${u.numero(p.estoque_producao)} ${p.unidade_producao}` : 'em estoque' %></div>
       </div>
     </li>

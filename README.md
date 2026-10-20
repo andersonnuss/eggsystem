@@ -4,7 +4,7 @@ Sistema web simples para gerenciar o que o sítio produz e vende para conhecidos
 
 - **Produtos**: nome, unidade de venda (dúzia, kg, pote…) e preço padrão. Opcionalmente, uma unidade de produção diferente (ex.: produção por **ovo**, venda por **dúzia**, 12 ovos = 1 dúzia)
 - **Produção**: lançamentos diários de produção e de perdas/consumo, na unidade de produção
-- **Estoque**: calculado automaticamente (produção − perdas − vendas), mostrado nas duas unidades
+- **Estoque**: calculado automaticamente (produção − perdas − vendas ± ajustes), mostrado nas duas unidades. Tocando no produto abre o **extrato**: todos os movimentos por data com o saldo após cada um. Lá também fica a **contagem de estoque**: informe quanto tem de verdade e o sistema lança um ajuste com a diferença (útil para o estoque inicial e para corrigir divergências)
 - **Clientes**: CPF (para nota fiscal de produtor), contato, link direto pro WhatsApp e histórico de compras
 - **Vendas**: vários itens por venda, controle de pago / a receber ("fiado")
 - **Painel**: resumo do mês, estoque e quem está devendo

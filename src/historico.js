@@ -31,7 +31,7 @@ const CAMPOS = {
   },
   producao: {
     produto: ['Produto', texto],
-    tipo: ['Tipo', (v) => (v === 'perda' ? 'perda/consumo' : 'produção')],
+    tipo: ['Tipo', (v) => ({ perda: 'perda/consumo', ajuste: 'ajuste por contagem' }[v] || 'produção')],
     data: ['Data', util.data],
     quantidade: ['Quantidade', texto],
     observacao: ['Observação', texto],

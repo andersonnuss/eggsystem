@@ -52,11 +52,12 @@
   <% for (const r of registros) { %>
     <li>
       <div class="bloco">
-        <div class="titulo"><%= r.produto %></div>
+        <div class="titulo"><a href="/produtos/<%= r.produto_id %>/extrato"><%= r.produto %></a><%= r.tipo === 'ajuste' ? ' · ajuste por contagem' : '' %></div>
         <div class="sutil"><%= u.data(r.data) %><%= r.observacao ? ' · ' + r.observacao : '' %></div>
       </div>
       <div class="valor">
-        <div><%= r.tipo === 'perda' ? '−' : '+' %><%= u.numero(r.quantidade) %> <%= r.unidade %></div>
+        <% const negativo = r.tipo === 'perda' || r.quantidade < 0; %>
+        <div><%= negativo ? '−' : '+' %><%= u.numero(Math.abs(r.quantidade)) %> <%= r.unidade %></div>
         <form method="post" action="/producao/<%= r.id %>/excluir" class="inline" onsubmit="return confirm('Excluir este registro?')">
           <button class="link sutil">excluir</button>
         </form>

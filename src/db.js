@@ -107,6 +107,23 @@ const migrations = [
   ALTER TABLE usuarios ADD COLUMN email TEXT;
   CREATE UNIQUE INDEX idx_usuarios_email ON usuarios(email) WHERE email IS NOT NULL;
   `,
+  `
+  -- Novo tipo "ajuste" (contagem de estoque): quantidade com sinal, + entra e - sai.
+  -- O SQLite não altera CHECK de uma tabela existente, então ela é recriada.
+  CREATE TABLE producao_nova (
+    id INTEGER PRIMARY KEY,
+    produto_id INTEGER NOT NULL REFERENCES produtos(id),
+    data TEXT NOT NULL,
+    tipo TEXT NOT NULL DEFAULT 'producao' CHECK (tipo IN ('producao', 'perda', 'ajuste')),
+    quantidade REAL NOT NULL CHECK (quantidade <> 0 AND (tipo = 'ajuste' OR quantidade > 0)),
+    observacao TEXT
+  );
+  INSERT INTO producao_nova (id, produto_id, data, tipo, quantidade, observacao)
+    SELECT id, produto_id, data, tipo, quantidade, observacao FROM producao;
+  DROP TABLE producao;
+  ALTER TABLE producao_nova RENAME TO producao;
+  CREATE INDEX idx_producao_produto ON producao(produto_id);
+  `,
 ];
 
 function migrate() {
