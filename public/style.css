@@ -10,6 +10,7 @@
   --ok-fundo: #e3f3e8;
   --alerta: #a5462c;
   --alerta-fundo: #fbe7e1;
+  --grafico: #a9671a; /* barras: validado contra o fundo do cartão (contraste, croma e luminosidade) */
   --raio: 10px;
   --menu-altura: 64px;
 }
@@ -26,6 +27,7 @@
     --ok-fundo: #1f3627;
     --alerta: #f0957b;
     --alerta-fundo: #42251d;
+    --grafico: #c4862a;
   }
 }
 
@@ -174,6 +176,38 @@ form.inline { display: inline; }
 .opcao { display: flex !important; gap: 10px; align-items: flex-start; border: 1px solid var(--borda); border-radius: 8px; padding: 10px 12px; cursor: pointer; color: var(--texto) !important; font-size: 1rem !important; }
 .opcao:has(input:checked) { border-color: var(--primaria); outline: 1px solid var(--primaria); }
 .opcao input { width: 20px; min-height: 20px; margin-top: 2px; flex: none; }
+/* Gráfico de produção */
+.filtros-grafico { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+.filtros-grafico select { width: auto; max-width: 100%; }
+.filtros-grafico .filtros { margin: 0; }
+.numeros-3 { margin-bottom: 12px; }
+@media (min-width: 760px) { .numeros-3 { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 759px) { .numeros-3 .numero:last-child { grid-column: 1 / -1; } }
+.grafico-cartao { padding-bottom: 8px; }
+.grafico-titulo { margin-bottom: 8px; }
+.grafico { position: relative; width: 100%; }
+.grafico svg { display: block; overflow: visible; }
+.grafico .grade { stroke: var(--borda); stroke-width: 1; }
+.grafico .eixo { fill: var(--sutil); font-size: 11px; font-variant-numeric: tabular-nums; }
+.grafico .rotulo-valor { fill: var(--texto); font-size: 12px; font-weight: 600; }
+.grafico .marca { fill: var(--grafico); }
+.grafico .alvo { fill: transparent; }
+.grafico .barra { cursor: pointer; outline: none; }
+.grafico .barra.ativa .marca, .grafico .barra:focus-visible .marca { opacity: .75; }
+.grafico .barra:focus-visible .alvo { fill: var(--borda); fill-opacity: .4; }
+.grafico-dica {
+  position: absolute; pointer-events: none; white-space: nowrap; z-index: 2;
+  background: var(--superficie); border: 1px solid var(--borda); border-radius: 8px;
+  padding: 6px 10px; box-shadow: 0 2px 8px rgb(0 0 0 / .12); font-size: .85rem;
+  display: grid; gap: 2px;
+}
+.grafico-dica strong { font-size: 1rem; }
+.grafico-dica span { color: var(--sutil); }
+.tabela { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: .9rem; }
+.tabela th, .tabela td { padding: 6px 4px; border-bottom: 1px solid var(--borda); text-align: left; }
+.tabela .direita { text-align: right; font-variant-numeric: tabular-nums; }
+details.cartao summary { cursor: pointer; color: var(--primaria); font-weight: 600; }
+
 .extrato .entrada { color: var(--ok); font-weight: 600; }
 .extrato .saida { color: var(--alerta); font-weight: 600; }
 .extrato .negativo { color: var(--alerta); }

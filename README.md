@@ -8,6 +8,7 @@ Sistema web simples para gerenciar o que o sítio produz e vende para conhecidos
 - **Clientes**: CPF (para nota fiscal de produtor), contato, link direto pro WhatsApp e histórico de compras
 - **Vendas**: vários itens por venda, controle de pago / a receber ("fiado")
 - **Painel**: resumo do mês, estoque e quem está devendo
+- **Gráfico de produção** (Painel ou Produção → 📈 Gráfico): produção por dia (7 e 30 dias), por semana (6 meses) ou por mês (1 ano), com total, média por dia, melhor período e tabela. Abre nos ovos; dá para escolher outro produto
 - **Alexa**: lançamento de produção e perdas por voz ("Alexa, diga ao meu sítio que hoje a produção foi de 30 ovos")
 - **Histórico**: log de tudo que foi cadastrado, alterado ou excluído (produtos, clientes, produção, vendas, usuários) e dos acessos, com o que mudou e quem fez; dá para filtrar por pessoa
 - **Usuários**: vários usuários, todos com os mesmos acessos (o cadastro serve para saber quem fez cada coisa). Cada um entra **com a conta Google (Gmail), sem senha**, ou com usuário e senha. Usuário desativado não entra e é desconectado na hora

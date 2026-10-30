@@ -1,5 +1,8 @@
 <%- include('../partials/topo') %>
-<h1>Produção</h1>
+<div class="cabecalho">
+  <h1>Produção</h1>
+  <a href="/graficos" class="botao secundario pequeno">📈 Gráfico</a>
+</div>
 <div class="cartao">
   <% if (erro) { %><div class="erro"><%= erro %></div><% } %>
   <% if (!produtos.length) { %>
