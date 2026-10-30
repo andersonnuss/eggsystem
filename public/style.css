@@ -195,6 +195,7 @@ form.inline { display: inline; }
 .grafico .barra { cursor: pointer; outline: none; }
 .grafico .barra.ativa .marca, .grafico .barra:focus-visible .marca { opacity: .75; }
 .grafico .barra:focus-visible .alvo { fill: var(--borda); fill-opacity: .4; }
+.grafico-acoes { align-items: center; margin-top: 8px; }
 .grafico-dica {
   position: absolute; pointer-events: none; white-space: nowrap; z-index: 2;
   background: var(--superficie); border: 1px solid var(--borda); border-radius: 8px;

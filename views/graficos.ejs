@@ -39,6 +39,10 @@
     <% } else { %>
       <div id="grafico" class="grafico" role="img"
            aria-label="<%= `Produção de ${produto.nome} por ${nomeGrao}, total ${qtd(total)}` %>"></div>
+      <div class="acoes grafico-acoes">
+        <button type="button" id="compartilhar" class="botao secundario">📤 Compartilhar</button>
+        <span id="compartilhar-aviso" class="sutil" role="status"></span>
+      </div>
     <% } %>
   </div>
 
@@ -56,7 +60,23 @@
 
   <p class="sutil">Considera só os lançamentos de produção (perdas e ajustes de contagem ficam no extrato do produto).</p>
 
-  <script type="application/json" id="dados-grafico"><%- JSON.stringify({ baldes, escala, maior: melhor && melhor.inicio }).replace(/</g, '\\u003c') %></script>
+<%
+  // Textos da imagem compartilhada (a imagem precisa fazer sentido sozinha numa conversa)
+  const compartilhar = {
+    produto: produto.nome,
+    subtitulo: `Produção por ${nomeGrao} · últimos ${periodos[periodo].nome} (${u.data(baldes[0].inicio)} a ${u.data(baldes.at(-1).fim)})`,
+    numeros: [
+      ['Total', qtd(total)],
+      ['Média por dia', qtd(mediaDia)],
+      [`Melhor ${nomeGrao}`, melhor ? `${qtd(melhor.valor)} (${melhor.detalhe})` : '—'],
+    ],
+    texto: `${produto.nome}: ${qtd(total)} em ${periodos[periodo].nome} (média de ${qtd(mediaDia)} por dia)`,
+    arquivo: `producao-${produto.nome}-${periodo}`.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+    rodape: `Eggsystem · gerado em ${u.data(u.hoje())}`,
+  };
+%>
+  <script type="application/json" id="dados-grafico"><%- JSON.stringify({ baldes, escala, maior: melhor && melhor.inicio, compartilhar }).replace(/</g, '\\u003c') %></script>
+  <script src="/compartilhar-grafico.js?v=<%= versao %>" defer></script>
   <script>
     (function () {
       const el = document.getElementById('grafico');
