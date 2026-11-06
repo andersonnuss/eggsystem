@@ -183,6 +183,7 @@ form.inline { display: inline; }
 .numeros-3 { margin-bottom: 12px; }
 @media (min-width: 760px) { .numeros-3 { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 759px) { .numeros-3 .numero:last-child { grid-column: 1 / -1; } }
+.numeros-vendas { margin-bottom: 12px; }
 .grafico-cartao { padding-bottom: 8px; }
 .grafico-titulo { margin-bottom: 8px; }
 .grafico { position: relative; width: 100%; }

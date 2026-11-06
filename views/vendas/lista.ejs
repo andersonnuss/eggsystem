@@ -6,6 +6,7 @@
 <div class="filtros">
   <a href="/vendas" class="<%= filtro === 'todas' ? 'ativo' : '' %>">Todas</a>
   <a href="/vendas?filtro=pendentes" class="<%= filtro === 'pendentes' ? 'ativo' : '' %>">A receber</a>
+  <a href="/vendas/historico">📈 Histórico</a>
 </div>
 <% if (!vendas.length) { %><p class="vazio">Nenhuma venda <%= filtro === 'pendentes' ? 'pendente' : 'registrada' %>.</p><% } %>
 <ul class="lista">

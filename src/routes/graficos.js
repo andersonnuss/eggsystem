@@ -23,8 +23,8 @@ const PERIODOS = {
   '1a': { nome: '1 ano', grao: 'mes', quantos: 12 },
 };
 
-function montarBaldes(periodo, fim) {
-  const { grao, quantos } = PERIODOS[periodo];
+// { grao, quantos }: tipo de balde e quantos, terminando no dia `fim` (inclusive)
+function montarBaldes({ grao, quantos }, fim) {
   const baldes = [];
   if (grao === 'dia') {
     for (let i = quantos - 1; i >= 0; i--) {
@@ -54,7 +54,7 @@ function montarBaldes(periodo, fim) {
 // Produção (só lançamentos do tipo produção; perdas e ajustes não entram) agrupada nos baldes
 function serie(produto, periodo) {
   const fim = hoje();
-  const baldes = montarBaldes(periodo, fim);
+  const baldes = montarBaldes(PERIODOS[periodo], fim);
   const porDia = db.prepare(`
     SELECT data, SUM(quantidade) AS total FROM producao
     WHERE produto_id = ? AND tipo = 'producao' AND data BETWEEN ? AND ?
@@ -107,3 +107,5 @@ router.get('/', (req, res) => {
 module.exports = router;
 module.exports.montarBaldes = montarBaldes;
 module.exports.escala = escala;
+module.exports.paraData = paraData;
+module.exports.somarDias = somarDias;

@@ -1,11 +1,11 @@
-// Botão "Compartilhar" do gráfico de produção: gera um PNG e abre o compartilhamento do celular
+// Botão "Compartilhar" dos gráficos de produção e de vendas: gera um PNG e abre o compartilhamento do celular
 // (Web Share API). Onde o navegador não compartilha arquivos, baixa a imagem.
 (function () {
   const botao = document.getElementById('compartilhar');
   const dadosEl = document.getElementById('dados-grafico');
   if (!botao || !dadosEl) return;
   const aviso = document.getElementById('compartilhar-aviso');
-  const { baldes, escala, maior, compartilhar: info } = JSON.parse(dadosEl.textContent);
+  const { baldes, escala, maior, prefixo = '', compartilhar: info } = JSON.parse(dadosEl.textContent);
 
   // Sempre no tema claro: a imagem precisa ficar legível em qualquer conversa
   const COR = { fundo: '#ffffff', texto: '#2b2620', sutil: '#776d60', grade: '#e3dacb', barra: '#a9671a' };
@@ -88,7 +88,7 @@
         ctx.fill();
       }
       if (b.inicio === maior) {
-        texto(ctx, fmt.format(b.valor), cx, topo - 14, { tamanho: 28, peso: 700, alinhar: 'center', largura: 200 });
+        texto(ctx, prefixo + fmt.format(b.valor), cx, topo - 14, { tamanho: 28, peso: 700, alinhar: 'center', largura: 200 });
       }
       if ((baldes.length - 1 - i) % cadaRotulo === 0) {
         texto(ctx, b.rotulo, cx, area.base + 44, { tamanho: 26, cor: COR.sutil, alinhar: 'center', largura: Math.max(banda * cadaRotulo - 8, 60) });

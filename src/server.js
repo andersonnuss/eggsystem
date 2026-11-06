@@ -81,6 +81,7 @@ app.use('/', require('./routes/painel'));
 app.use('/produtos', require('./routes/produtos'));
 app.use('/clientes', require('./routes/clientes'));
 app.use('/producao', require('./routes/producao'));
+app.use('/vendas/historico', require('./routes/vendasHistorico'));
 app.use('/vendas', require('./routes/vendas'));
 app.use('/historico', require('./routes/historico'));
 app.use('/integracoes', require('./routes/integracoes'));

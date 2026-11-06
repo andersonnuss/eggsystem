@@ -1,0 +1,139 @@
+<%- include('../partials/topo') %>
+<h1>Histórico de vendas</h1>
+<%
+  const nomeGrao = { dia: 'dia', semana: 'semana', mes: 'mês' }[grao];
+  const link = (p) => `/vendas/historico?${new URLSearchParams({ produto: produto ? produto.id : '', periodo: p })}`;
+  const intervalo = `${u.data(baldes[0].inicio)} a ${u.data(baldes.at(-1).fim)}`;
+%>
+
+<form method="get" action="/vendas/historico" class="filtros-grafico">
+  <input type="hidden" name="periodo" value="<%= periodo %>">
+  <select name="produto" onchange="this.form.submit()" aria-label="Produto">
+    <option value="">Todos os produtos</option>
+    <% for (const p of produtos) { %>
+      <option value="<%= p.id %>" <%= produto && p.id === produto.id ? 'selected' : '' %>><%= p.nome %></option>
+    <% } %>
+  </select>
+  <div class="filtros" role="group" aria-label="Período">
+    <% for (const [chave, p] of Object.entries(periodos)) { %>
+      <a href="<%= link(chave) %>" class="<%= chave === periodo ? 'ativo' : '' %>" <%= chave === periodo ? 'aria-current="true"' : '' %>><%= p.nome %></a>
+    <% } %>
+  </div>
+</form>
+
+<div class="numeros numeros-vendas">
+  <div class="numero"><div class="rotulo">Vendido em <%= periodos[periodo].nome %></div>
+    <div class="valor"><%= u.dinheiro(total) %></div>
+    <% if (comparacao) { %><div class="sutil"><%= comparacao %></div><% } %>
+  </div>
+  <% if (produto) { %>
+    <div class="numero"><div class="rotulo">Quantidade</div>
+      <div class="valor"><%= qtd(quantidade) %></div>
+      <div class="sutil">em <%= vendas %> venda<%= vendas === 1 ? '' : 's' %></div>
+    </div>
+  <% } else { %>
+    <div class="numero"><div class="rotulo">Vendas</div>
+      <div class="valor"><%= vendas %></div>
+      <% if (vendas) { %><div class="sutil">média de <%= u.dinheiro(Math.round(total / vendas)) %> por venda</div><% } %>
+    </div>
+  <% } %>
+  <div class="numero"><div class="rotulo">Melhor <%= nomeGrao %></div>
+    <div class="valor"><%= melhor ? u.dinheiro(melhor.centavos) : '—' %></div>
+    <% if (melhor) { %><div class="sutil"><%= melhor.detalhe %></div><% } %>
+  </div>
+  <div class="numero <%= aberto > 0 ? 'alerta' : '' %>"><div class="rotulo">Ainda a receber</div>
+    <div class="valor"><%= u.dinheiro(aberto) %></div>
+    <div class="sutil">das vendas do período</div>
+  </div>
+</div>
+
+<div class="cartao grafico-cartao">
+  <div class="sutil grafico-titulo">
+    <%= produto ? produto.nome : 'Todos os produtos' %>: vendido por <%= nomeGrao %>, em R$ (<%= intervalo %>)
+  </div>
+  <% if (total === 0) { %>
+    <p class="vazio">Nenhuma venda neste período.</p>
+  <% } else { %>
+    <div id="grafico" class="grafico" role="img"
+         aria-label="<%= `Vendas ${produto ? 'de ' + produto.nome + ' ' : ''}por ${nomeGrao}, total ${u.dinheiro(total)}` %>"></div>
+    <div class="acoes grafico-acoes">
+      <button type="button" id="compartilhar" class="botao secundario">📤 Compartilhar</button>
+      <span id="compartilhar-aviso" class="sutil" role="status"></span>
+    </div>
+  <% } %>
+</div>
+
+<details class="cartao" <%= total > 0 ? 'open' : '' %>>
+  <summary>Por <%= nomeGrao %></summary>
+  <table class="tabela">
+    <thead><tr>
+      <th><%= nomeGrao[0].toUpperCase() + nomeGrao.slice(1) %></th>
+      <th class="direita">Vendas</th>
+      <% if (produto) { %><th class="direita">Qtd.</th><% } %>
+      <th class="direita">Valor</th>
+    </tr></thead>
+    <tbody>
+      <% for (const b of baldes.slice().reverse()) { %>
+        <tr>
+          <td><%= b.detalhe %></td>
+          <td class="direita"><%= b.vendas %></td>
+          <% if (produto) { %><td class="direita"><%= u.numero(b.quantidade) %></td><% } %>
+          <td class="direita"><%= b.texto %></td>
+        </tr>
+      <% } %>
+    </tbody>
+  </table>
+</details>
+
+<% if (porProduto.length) { %>
+  <h2>O que mais vendeu</h2>
+  <ul class="lista">
+    <% for (const p of porProduto) { %>
+      <li>
+        <a class="bloco" href="<%= `/vendas/historico?${new URLSearchParams({ produto: p.id, periodo })}` %>">
+          <div class="titulo"><%= p.nome %></div>
+          <div class="sutil"><%= u.numero(p.quantidade) %> <%= p.unidade %> · <%= Math.round((p.centavos / total) * 100) %>% do total</div>
+        </a>
+        <div class="valor"><%= u.dinheiro(p.centavos) %></div>
+      </li>
+    <% } %>
+  </ul>
+<% } %>
+
+<% if (clientes.length) { %>
+  <h2>Quem mais comprou</h2>
+  <ul class="lista">
+    <% for (const c of clientes) { %>
+      <li>
+        <a class="bloco" href="/clientes/<%= c.id %>">
+          <div class="titulo"><%= c.nome %></div>
+          <div class="sutil"><%= c.vendas %> compra<%= c.vendas === 1 ? '' : 's' %></div>
+        </a>
+        <div class="valor"><%= u.dinheiro(c.centavos) %></div>
+      </li>
+    <% } %>
+  </ul>
+<% } %>
+
+<p class="sutil">Pela data da venda, pagas ou não. A comparação usa o mesmo número de dias logo antes do período.</p>
+
+<% if (total > 0) {
+  // Textos da imagem compartilhada (a imagem precisa fazer sentido sozinha numa conversa)
+  const compartilhar = {
+    produto: produto ? `Vendas de ${produto.nome}` : 'Vendas',
+    subtitulo: `Por ${nomeGrao} · últimos ${periodos[periodo].nome} (${intervalo})`,
+    numeros: [
+      ['Total vendido', u.dinheiro(total)],
+      produto ? ['Quantidade', qtd(quantidade)] : ['Vendas', String(vendas)],
+      [`Melhor ${nomeGrao}`, melhor ? `${u.dinheiro(melhor.centavos)} (${melhor.detalhe})` : '—'],
+    ],
+    texto: `${produto ? `Vendas de ${produto.nome}` : 'Vendas'}: ${u.dinheiro(total)} em ${periodos[periodo].nome}${comparacao ? ` (${comparacao})` : ''}`,
+    arquivo: `vendas-${produto ? produto.nome + '-' : ''}${periodo}`.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+    rodape: `Eggsystem · gerado em ${u.data(u.hoje())}`,
+  };
+%>
+  <script type="application/json" id="dados-grafico"><%- JSON.stringify({ baldes, escala, maior: melhor && melhor.inicio, prefixo: 'R$ ', compartilhar }).replace(/</g, '\\u003c') %></script>
+  <script src="/compartilhar-grafico.js?v=<%= versao %>" defer></script>
+  <script src="/grafico-barras.js?v=<%= versao %>" defer></script>
+<% } %>
+<%- include('../partials/rodape') %>
