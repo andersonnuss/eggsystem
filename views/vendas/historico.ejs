@@ -2,8 +2,21 @@
 <h1>Histórico de vendas</h1>
 <%
   const nomeGrao = { dia: 'dia', semana: 'semana', mes: 'mês' }[grao];
-  const link = (p) => `/vendas/historico?${new URLSearchParams({ produto: produto ? produto.id : '', periodo: p })}`;
+  // Monta uma URL da tela preservando os filtros atuais, trocando só o que vier em `troca`
+  const url = (troca = {}) => {
+    const q = { produto: produto ? produto.id : '', cliente: cliente ? cliente.id : '', periodo, ...troca };
+    for (const k of Object.keys(q)) if (q[k] === '' || q[k] == null) delete q[k];
+    return `/vendas/historico?${new URLSearchParams(q)}`;
+  };
   const intervalo = `${u.data(baldes[0].inicio)} a ${u.data(baldes.at(-1).fim)}`;
+  // Nome do que está sendo mostrado (produto e/ou cliente)
+  const partes = [];
+  if (produto) partes.push(produto.nome);
+  if (cliente) partes.push(cliente.nome);
+  const alvo = partes.length ? partes.join(' · ') : 'Todos os produtos';
+  const tituloVendas = produto || cliente
+    ? `Vendas${produto ? ' de ' + produto.nome : ''}${cliente ? ' — ' + cliente.nome : ''}`
+    : 'Vendas';
 %>
 
 <form method="get" action="/vendas/historico" class="filtros-grafico">
@@ -14,9 +27,15 @@
       <option value="<%= p.id %>" <%= produto && p.id === produto.id ? 'selected' : '' %>><%= p.nome %></option>
     <% } %>
   </select>
+  <select name="cliente" onchange="this.form.submit()" aria-label="Cliente">
+    <option value="">Todos os clientes</option>
+    <% for (const c of clientes) { %>
+      <option value="<%= c.id %>" <%= cliente && c.id === cliente.id ? 'selected' : '' %>><%= c.nome %></option>
+    <% } %>
+  </select>
   <div class="filtros" role="group" aria-label="Período">
     <% for (const [chave, p] of Object.entries(periodos)) { %>
-      <a href="<%= link(chave) %>" class="<%= chave === periodo ? 'ativo' : '' %>" <%= chave === periodo ? 'aria-current="true"' : '' %>><%= p.nome %></a>
+      <a href="<%= url({ periodo: chave }) %>" class="<%= chave === periodo ? 'ativo' : '' %>" <%= chave === periodo ? 'aria-current="true"' : '' %>><%= p.nome %></a>
     <% } %>
   </div>
 </form>
@@ -49,13 +68,13 @@
 
 <div class="cartao grafico-cartao">
   <div class="sutil grafico-titulo">
-    <%= produto ? produto.nome : 'Todos os produtos' %>: vendido por <%= nomeGrao %>, em R$ (<%= intervalo %>)
+    <%= alvo %>: vendido por <%= nomeGrao %>, em R$ (<%= intervalo %>)
   </div>
   <% if (total === 0) { %>
     <p class="vazio">Nenhuma venda neste período.</p>
   <% } else { %>
     <div id="grafico" class="grafico" role="img"
-         aria-label="<%= `Vendas ${produto ? 'de ' + produto.nome + ' ' : ''}por ${nomeGrao}, total ${u.dinheiro(total)}` %>"></div>
+         aria-label="<%= `${tituloVendas} por ${nomeGrao}, total ${u.dinheiro(total)}` %>"></div>
     <div class="acoes grafico-acoes">
       <button type="button" id="compartilhar" class="botao secundario">📤 Compartilhar</button>
       <span id="compartilhar-aviso" class="sutil" role="status"></span>
@@ -86,11 +105,11 @@
 </details>
 
 <% if (porProduto.length) { %>
-  <h2>O que mais vendeu</h2>
+  <h2><%= cliente ? `O que ${cliente.nome} mais comprou` : 'O que mais vendeu' %></h2>
   <ul class="lista">
     <% for (const p of porProduto) { %>
       <li>
-        <a class="bloco" href="<%= `/vendas/historico?${new URLSearchParams({ produto: p.id, periodo })}` %>">
+        <a class="bloco" href="<%= url({ produto: p.id }) %>">
           <div class="titulo"><%= p.nome %></div>
           <div class="sutil"><%= u.numero(p.quantidade) %> <%= p.unidade %> · <%= Math.round((p.centavos / total) * 100) %>% do total</div>
         </a>
@@ -100,12 +119,12 @@
   </ul>
 <% } %>
 
-<% if (clientes.length) { %>
+<% if (topClientes.length) { %>
   <h2>Quem mais comprou</h2>
   <ul class="lista">
-    <% for (const c of clientes) { %>
+    <% for (const c of topClientes) { %>
       <li>
-        <a class="bloco" href="/clientes/<%= c.id %>">
+        <a class="bloco" href="<%= url({ cliente: c.id }) %>">
           <div class="titulo"><%= c.nome %></div>
           <div class="sutil"><%= c.vendas %> compra<%= c.vendas === 1 ? '' : 's' %></div>
         </a>
@@ -120,15 +139,15 @@
 <% if (total > 0) {
   // Textos da imagem compartilhada (a imagem precisa fazer sentido sozinha numa conversa)
   const compartilhar = {
-    produto: produto ? `Vendas de ${produto.nome}` : 'Vendas',
+    produto: tituloVendas,
     subtitulo: `Por ${nomeGrao} · últimos ${periodos[periodo].nome} (${intervalo})`,
     numeros: [
       ['Total vendido', u.dinheiro(total)],
       produto ? ['Quantidade', qtd(quantidade)] : ['Vendas', String(vendas)],
       [`Melhor ${nomeGrao}`, melhor ? `${u.dinheiro(melhor.centavos)} (${melhor.detalhe})` : '—'],
     ],
-    texto: `${produto ? `Vendas de ${produto.nome}` : 'Vendas'}: ${u.dinheiro(total)} em ${periodos[periodo].nome}${comparacao ? ` (${comparacao})` : ''}`,
-    arquivo: `vendas-${produto ? produto.nome + '-' : ''}${periodo}`.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+    texto: `${tituloVendas}: ${u.dinheiro(total)} em ${periodos[periodo].nome}${comparacao ? ` (${comparacao})` : ''}`,
+    arquivo: `vendas-${produto ? produto.nome + '-' : ''}${cliente ? cliente.nome + '-' : ''}${periodo}`.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
     rodape: `Eggsystem · gerado em ${u.data(u.hoje())}`,
   };
 %>
