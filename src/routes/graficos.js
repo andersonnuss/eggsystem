@@ -51,10 +51,39 @@ function montarBaldes({ grao, quantos }, fim) {
   return baldes;
 }
 
+// Meses ("AAAA-MM"), usados pelo filtro de mês da produção e das vendas
+const MESES_LONGOS = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+const nomeMes = (aaaamm) => `${MESES_LONGOS[Number(aaaamm.slice(5, 7)) - 1]}/${aaaamm.slice(0, 4)}`;
+const ultimoDia = (aaaamm) => {
+  const [a, m] = aaaamm.split('-').map(Number);
+  return paraTexto(new Date(Date.UTC(a, m, 0)));
+};
+const mesAnterior = (aaaamm) => {
+  const [a, m] = aaaamm.split('-').map(Number);
+  return paraTexto(new Date(Date.UTC(a, m - 2, 1))).slice(0, 7);
+};
+
+// Meses que podem ser escolhidos: do mês de `primeiraData` até o atual (mais recente primeiro)
+function listaMeses(primeiraData) {
+  const meses = [];
+  for (let m = hoje().slice(0, 7); ; m = mesAnterior(m)) {
+    meses.push({ valor: m, nome: nomeMes(m) });
+    if (!primeiraData || m <= primeiraData.slice(0, 7) || meses.length >= 120) break;
+  }
+  return meses;
+}
+
+// Barras por dia de um mês; no mês atual, só até hoje
+function baldesDoMes(aaaamm) {
+  const inicio = `${aaaamm}-01`;
+  const fim = ultimoDia(aaaamm) < hoje() ? ultimoDia(aaaamm) : hoje();
+  const dias = (paraData(fim) - paraData(inicio)) / 86400000 + 1;
+  return montarBaldes({ grao: 'dia', quantos: dias }, fim);
+}
+
 // Produção (só lançamentos do tipo produção; perdas e ajustes não entram) agrupada nos baldes
-function serie(produto, periodo) {
-  const fim = hoje();
-  const baldes = montarBaldes(PERIODOS[periodo], fim);
+function serie(produto, baldes) {
+  const fim = baldes.at(-1).fim;
   const porDia = db.prepare(`
     SELECT data, SUM(quantidade) AS total FROM producao
     WHERE produto_id = ? AND tipo = 'producao' AND data BETWEEN ? AND ?
@@ -87,7 +116,13 @@ router.get('/', (req, res) => {
     || produtos[0];
   if (!produto) return res.render('graficos', { titulo: 'Gráfico de produção', produto: null, produtos });
 
-  const dados = serie(produto, periodo);
+  // Meses desde a primeira produção lançada (de qualquer produto, para a lista não mudar ao trocar de produto)
+  const primeira = db.prepare("SELECT MIN(data) AS data FROM producao WHERE tipo = 'producao'").get().data;
+  const meses = listaMeses(primeira);
+  const mes = meses.some((m) => m.valor === req.query.mes) ? req.query.mes : null; // mês escolhido tem prioridade
+
+  const baldes = mes ? baldesDoMes(mes) : montarBaldes(PERIODOS[periodo], hoje());
+  const dados = serie(produto, baldes);
   const unidade = unidadeProducao(produto);
   for (const b of dados.baldes) b.texto = falarQuantidade(b.valor, unidade);
   res.render('graficos', {
@@ -98,9 +133,13 @@ router.get('/', (req, res) => {
     qtd: (n) => falarQuantidade(Math.round(n * 10) / 10, unidade),
     periodo,
     periodos: PERIODOS,
+    meses,
+    mes,
+    nomePeriodo: mes ? nomeMes(mes) : PERIODOS[periodo].nome,
+    subtituloPeriodo: mes ? nomeMes(mes) : `últimos ${PERIODOS[periodo].nome}`,
     ...dados,
     escala: escala(Math.max(...dados.baldes.map((b) => b.valor))),
-    grao: PERIODOS[periodo].grao,
+    grao: mes ? 'dia' : PERIODOS[periodo].grao,
   });
 });
 
@@ -109,3 +148,7 @@ module.exports.montarBaldes = montarBaldes;
 module.exports.escala = escala;
 module.exports.paraData = paraData;
 module.exports.somarDias = somarDias;
+module.exports.nomeMes = nomeMes;
+module.exports.ultimoDia = ultimoDia;
+module.exports.mesAnterior = mesAnterior;
+module.exports.listaMeses = listaMeses;

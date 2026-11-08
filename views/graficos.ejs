@@ -5,6 +5,7 @@
   <p class="vazio">Cadastre um produto para ver o gráfico. <a href="/produtos/novo">Novo produto</a></p>
 <% } else {
      const nomeGrao = { dia: 'dia', semana: 'semana', mes: 'mês' }[grao];
+     // Botões de período: escolher um período desfaz a escolha de mês
      const link = (p) => `/graficos?${new URLSearchParams({ produto: produto.id, periodo: p })}`; %>
 
   <form method="get" action="/graficos" class="filtros-grafico">
@@ -14,15 +15,22 @@
         <option value="<%= p.id %>" <%= p.id === produto.id ? 'selected' : '' %>><%= p.nome %></option>
       <% } %>
     </select>
+    <select name="mes" onchange="this.form.submit()" aria-label="Mês">
+      <option value="">Escolher mês…</option>
+      <% for (const m of meses) { %>
+        <option value="<%= m.valor %>" <%= m.valor === mes ? 'selected' : '' %>><%= m.nome %></option>
+      <% } %>
+    </select>
     <div class="filtros" role="group" aria-label="Período">
-      <% for (const [chave, p] of Object.entries(periodos)) { %>
-        <a href="<%= link(chave) %>" class="<%= chave === periodo ? 'ativo' : '' %>" aria-current="<%= chave === periodo ? 'true' : 'false' %>"><%= p.nome %></a>
+      <% for (const [chave, p] of Object.entries(periodos)) {
+           const ativo = !mes && chave === periodo; %>
+        <a href="<%= link(chave) %>" class="<%= ativo ? 'ativo' : '' %>" aria-current="<%= ativo ? 'true' : 'false' %>"><%= p.nome %></a>
       <% } %>
     </div>
   </form>
 
   <div class="numeros numeros-3">
-    <div class="numero"><div class="rotulo">Total em <%= periodos[periodo].nome %></div><div class="valor"><%= qtd(total) %></div></div>
+    <div class="numero"><div class="rotulo">Total em <%= nomePeriodo %></div><div class="valor"><%= qtd(total) %></div></div>
     <div class="numero"><div class="rotulo">Média por dia</div><div class="valor"><%= qtd(mediaDia) %></div></div>
     <div class="numero"><div class="rotulo">Melhor <%= nomeGrao %></div>
       <div class="valor"><%= melhor ? qtd(melhor.valor) : '—' %></div>
@@ -64,14 +72,14 @@
   // Textos da imagem compartilhada (a imagem precisa fazer sentido sozinha numa conversa)
   const compartilhar = {
     produto: produto.nome,
-    subtitulo: `Produção por ${nomeGrao} · últimos ${periodos[periodo].nome} (${u.data(baldes[0].inicio)} a ${u.data(baldes.at(-1).fim)})`,
+    subtitulo: `Produção por ${nomeGrao} · ${subtituloPeriodo} (${u.data(baldes[0].inicio)} a ${u.data(baldes.at(-1).fim)})`,
     numeros: [
       ['Total', qtd(total)],
       ['Média por dia', qtd(mediaDia)],
       [`Melhor ${nomeGrao}`, melhor ? `${qtd(melhor.valor)} (${melhor.detalhe})` : '—'],
     ],
-    texto: `${produto.nome}: ${qtd(total)} em ${periodos[periodo].nome} (média de ${qtd(mediaDia)} por dia)`,
-    arquivo: `producao-${produto.nome}-${periodo}`.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+    texto: `${produto.nome}: ${qtd(total)} em ${nomePeriodo} (média de ${qtd(mediaDia)} por dia)`,
+    arquivo: `producao-${produto.nome}-${mes || periodo}`.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
     rodape: `Eggsystem · gerado em ${u.data(u.hoje())}`,
   };
 %>

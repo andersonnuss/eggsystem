@@ -4,7 +4,7 @@ const express = require('express');
 const { db } = require('../db');
 const { produtosAtivos, clientesAtivos } = require('../consultas');
 const { hoje, dinheiro, numero } = require('../util');
-const { montarBaldes, escala, paraData, somarDias } = require('./graficos');
+const { montarBaldes, escala, paraData, somarDias, nomeMes, ultimoDia, mesAnterior, listaMeses } = require('./graficos');
 
 const router = express.Router();
 
@@ -43,27 +43,9 @@ function vendasPorDia(produto, cliente, inicio, fim) {
 
 const somar = (linhas, campo) => linhas.reduce((s, r) => s + (r[campo] || 0), 0);
 
-const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
-const nomeMes = (aaaamm) => `${MESES[Number(aaaamm.slice(5, 7)) - 1]}/${aaaamm.slice(0, 4)}`;
-const ultimoDia = (aaaamm) => {
-  const [a, m] = aaaamm.split('-').map(Number);
-  return new Date(Date.UTC(a, m, 0)).toISOString().slice(0, 10);
-};
-const mesAnterior = (aaaamm) => {
-  const [a, m] = aaaamm.split('-').map(Number);
-  return new Date(Date.UTC(a, m - 2, 1)).toISOString().slice(0, 7);
-};
-
 // Meses que podem ser escolhidos: do mês da primeira venda até o mês atual (mais recente primeiro)
 function mesesDisponiveis() {
-  const atual = hoje().slice(0, 7);
-  const primeira = db.prepare('SELECT MIN(data) AS data FROM vendas').get().data;
-  const meses = [];
-  for (let m = atual; ; m = mesAnterior(m)) {
-    meses.push({ valor: m, nome: nomeMes(m) });
-    if (!primeira || m <= primeira.slice(0, 7) || meses.length >= 120) break;
-  }
-  return meses;
+  return listaMeses(db.prepare('SELECT MIN(data) AS data FROM vendas').get().data);
 }
 
 // O recorte de datas da tela: um período móvel (ex.: últimos 3 meses) ou um mês escolhido.
