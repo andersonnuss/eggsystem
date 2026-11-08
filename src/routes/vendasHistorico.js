@@ -43,10 +43,75 @@ function vendasPorDia(produto, cliente, inicio, fim) {
 
 const somar = (linhas, campo) => linhas.reduce((s, r) => s + (r[campo] || 0), 0);
 
-function resumo(produto, cliente, periodo) {
-  const fim = hoje();
-  const baldes = montarBaldes(PERIODOS[periodo], fim);
+const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+const nomeMes = (aaaamm) => `${MESES[Number(aaaamm.slice(5, 7)) - 1]}/${aaaamm.slice(0, 4)}`;
+const ultimoDia = (aaaamm) => {
+  const [a, m] = aaaamm.split('-').map(Number);
+  return new Date(Date.UTC(a, m, 0)).toISOString().slice(0, 10);
+};
+const mesAnterior = (aaaamm) => {
+  const [a, m] = aaaamm.split('-').map(Number);
+  return new Date(Date.UTC(a, m - 2, 1)).toISOString().slice(0, 7);
+};
+
+// Meses que podem ser escolhidos: do mês da primeira venda até o mês atual (mais recente primeiro)
+function mesesDisponiveis() {
+  const atual = hoje().slice(0, 7);
+  const primeira = db.prepare('SELECT MIN(data) AS data FROM vendas').get().data;
+  const meses = [];
+  for (let m = atual; ; m = mesAnterior(m)) {
+    meses.push({ valor: m, nome: nomeMes(m) });
+    if (!primeira || m <= primeira.slice(0, 7) || meses.length >= 120) break;
+  }
+  return meses;
+}
+
+// O recorte de datas da tela: um período móvel (ex.: últimos 3 meses) ou um mês escolhido.
+// Define as barras, o nome do período e com o que comparar.
+function recorte(periodo, mes) {
+  if (!mes) {
+    const fim = hoje();
+    const baldes = montarBaldes(PERIODOS[periodo], fim);
+    const inicio = baldes[0].inicio;
+    const dias = (paraData(fim) - paraData(inicio)) / 86400000 + 1;
+    return {
+      baldes,
+      grao: PERIODOS[periodo].grao,
+      nome: PERIODOS[periodo].nome,
+      subtitulo: `últimos ${PERIODOS[periodo].nome}`,
+      anterior: { inicio: somarDias(inicio, -dias), fim: somarDias(inicio, -1) },
+      rotuloAnterior: { sobre: 'o período anterior', em: 'no período anterior', igual: 'igual ao período anterior' },
+      explicacao: 'A comparação usa o mesmo número de dias logo antes do período.',
+    };
+  }
+  // Mês escolhido: barras por dia, até hoje se for o mês atual
+  const inicio = `${mes}-01`;
+  const fim = ultimoDia(mes) < hoje() ? ultimoDia(mes) : hoje();
+  const dias = (paraData(fim) - paraData(inicio)) / 86400000 + 1;
+  const completo = fim === ultimoDia(mes);
+  // Compara com o mês anterior; se este ainda não acabou, com os mesmos dias do mês anterior
+  const ant = mesAnterior(mes);
+  const fimAnt = completo || somarDias(`${ant}-01`, dias - 1) > ultimoDia(ant) ? ultimoDia(ant) : somarDias(`${ant}-01`, dias - 1);
+  const nomeAnt = completo ? nomeMes(ant) : `${ddmm(`${ant}-01`)} a ${ddmm(fimAnt)}`;
+  return {
+    baldes: montarBaldes({ grao: 'dia', quantos: dias }, fim),
+    grao: 'dia',
+    nome: nomeMes(mes),
+    subtitulo: nomeMes(mes),
+    anterior: { inicio: `${ant}-01`, fim: fimAnt },
+    rotuloAnterior: { sobre: nomeAnt, em: `em ${nomeAnt}`, igual: `igual a ${nomeAnt}` },
+    explicacao: completo
+      ? `A comparação é com ${nomeMes(ant)}.`
+      : `O mês ainda não acabou: a comparação é com os mesmos dias de ${nomeMes(ant)} (${nomeAnt}).`,
+  };
+}
+
+const ddmm = (s) => `${s.slice(8, 10)}/${s.slice(5, 7)}`;
+
+function resumo(produto, cliente, r) {
+  const { baldes } = r;
   const inicio = baldes[0].inicio;
+  const fim = baldes.at(-1).fim;
   const porDia = vendasPorDia(produto, cliente, inicio, fim);
   for (const b of baldes) {
     const dias = porDia.filter((r) => r.data >= b.inicio && r.data <= b.fim);
@@ -57,9 +122,7 @@ function resumo(produto, cliente, periodo) {
     b.texto = dinheiro(b.centavos);
   }
 
-  // Período anterior com o mesmo número de dias, logo antes deste
-  const dias = (paraData(fim) - paraData(inicio)) / 86400000 + 1;
-  const anterior = vendasPorDia(produto, cliente, somarDias(inicio, -dias), somarDias(inicio, -1));
+  const anterior = vendasPorDia(produto, cliente, r.anterior.inicio, r.anterior.fim);
 
   const total = somar(porDia, 'centavos');
   const melhor = baldes.reduce((m, b) => (b.centavos > m.centavos ? b : m), baldes[0]);
@@ -97,36 +160,44 @@ function rankings(produto, cliente, inicio, fim) {
   return { porProduto, topClientes };
 }
 
-// "▲ 12% sobre o período anterior"
-function comparacao(total, anterior) {
-  if (anterior === 0) return total > 0 ? 'sem vendas no período anterior' : null;
+// "▲ 12% sobre o período anterior" / "▼ 5% sobre setembro/2026"
+function comparacao(total, anterior, rotulo) {
+  if (anterior === 0) return total > 0 ? `sem vendas ${rotulo.em}` : null;
   const pct = Math.round(((total - anterior) / anterior) * 100);
-  if (pct === 0) return 'igual ao período anterior';
-  return `${pct > 0 ? '▲' : '▼'} ${Math.abs(pct)}% sobre o período anterior`;
+  if (pct === 0) return rotulo.igual;
+  return `${pct > 0 ? '▲' : '▼'} ${Math.abs(pct)}% sobre ${rotulo.sobre}`;
 }
 
 router.get('/', (req, res) => {
   const produtos = produtosAtivos();
   const clientes = clientesAtivos();
+  const meses = mesesDisponiveis();
   const periodo = PERIODOS[req.query.periodo] ? req.query.periodo : '3m';
+  const mes = meses.some((m) => m.valor === req.query.mes) ? req.query.mes : null; // mês escolhido tem prioridade
   const produto = produtos.find((p) => p.id === Number(req.query.produto)) || null;
   const cliente = clientes.find((c) => c.id === Number(req.query.cliente)) || null;
 
-  const dados = resumo(produto, cliente, periodo);
+  const r = recorte(periodo, mes);
+  const dados = resumo(produto, cliente, r);
   const { inicio } = dados.baldes[0];
   const fim = dados.baldes.at(-1).fim;
   res.render('vendas/historico', {
     titulo: 'Histórico de vendas',
     produtos,
     clientes,
+    meses,
+    mes,
     produto,
     cliente,
     periodo,
     periodos: PERIODOS,
-    grao: PERIODOS[periodo].grao,
+    grao: r.grao,
+    nomePeriodo: r.nome,
+    subtituloPeriodo: r.subtitulo,
+    explicacaoComparacao: r.explicacao,
     ...dados,
     ...rankings(produto, cliente, inicio, fim),
-    comparacao: comparacao(dados.total, dados.totalAnterior),
+    comparacao: comparacao(dados.total, dados.totalAnterior, r.rotuloAnterior),
     qtd: (n) => `${numero(n)} ${produto ? produto.unidade : ''}`.trim(),
     escala: escala(Math.max(...dados.baldes.map((b) => b.valor))),
   });

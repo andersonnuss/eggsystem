@@ -16,7 +16,7 @@
     </select>
     <div class="filtros" role="group" aria-label="Período">
       <% for (const [chave, p] of Object.entries(periodos)) { %>
-        <a href="<%= link(chave) %>" class="<%= chave === periodo ? 'ativo' : '' %>" <%= chave === periodo ? 'aria-current="true"' : '' %>><%= p.nome %></a>
+        <a href="<%= link(chave) %>" class="<%= chave === periodo ? 'ativo' : '' %>" aria-current="<%= chave === periodo ? 'true' : 'false' %>"><%= p.nome %></a>
       <% } %>
     </div>
   </form>
